@@ -3035,7 +3035,7 @@ $('btn-register').addEventListener('click', async () => {
     const data = await auth(nickname);
     applySession(data);
     openKeyModal(data.key);
-    toast('契约已签定，建议先复制密钥', 'ok', 5000);
+    toast('契约已签定，建议先复制密钥', 'ok', 3200);
   } catch (error) {
     toast(error.message, 'err');
   } finally {
@@ -3330,7 +3330,7 @@ if (backdrop && window.matchMedia('(hover: hover)').matches) {
   const stored = readStoredKey();
   if (stored) {
     $('key-input').value = stored;
-    toast('检测到上次的密钥，点「使用密钥登录」继续', 'ok', 5000);
+    toast('检测到上次的密钥，点「使用密钥登录」继续', 'ok', 3000);
   }
 })();
 
