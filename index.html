@@ -326,6 +326,14 @@ select.input {
   color: var(--muted);
 }
 
+.build-tag {
+  margin: 18px 0 0;
+  text-align: center;
+  font-size: 10px;
+  letter-spacing: 0.24em;
+  color: rgba(94, 98, 122, 0.7);
+}
+
 /* ================= 顶栏 ================= */
 
 .topbar {
@@ -751,6 +759,8 @@ select.input {
         <span id="gate-session-text">已登录</span>
         <button id="btn-logout-gate" class="btn btn-quiet btn-sm" type="button">注销</button>
       </div>
+
+      <p class="build-tag">build 04</p>
     </div>
   </section>
 
@@ -1445,47 +1455,26 @@ function analyzeCouple(tokenA, tokenB) {
 
 /* ================= public/js/charts.js ================= */
 // public/js/charts.js
-// 单人雷达（按善恶取色 / 呼吸 / 特质放大 / 极端刺破）、双人叠加、合盘衍生
+// 单人雷达：三态取色（蓝/金/红）+ 尖刺突破 + 雾气呼吸
 
 
 
 const FONT_FAMILY = '"PingFang SC", "Noto Sans SC", "Microsoft YaHei", system-ui, sans-serif';
 
-// 正向：越高越"神性"；负向：越高越"恶性"
 const POSITIVE_AXES = ['empathy', 'vitality', 'order', 'intellect', 'pride'];
 const NEGATIVE_AXES = ['self_destruction', 'masochism', 'obsession', 'destruction', 'dominance'];
 
+// rgb 用于动态改透明度（呼吸）
 const THEMES = {
-  good: {
-    line: 'rgba(244, 209, 128, 0.95)',
-    node: '#ffe9b8',
-    area: [
-      [0, 'rgba(244, 209, 128, 0.24)'],
-      [1, 'rgba(244, 209, 128, 0.05)'],
-    ],
-    split: 'rgba(244, 209, 128, 0.16)',
-  },
-  neutral: {
-    line: 'rgba(140, 170, 255, 0.92)',
-    node: '#d3ddff',
-    area: [
-      [0, 'rgba(140, 170, 255, 0.20)'],
-      [1, 'rgba(140, 170, 255, 0.04)'],
-    ],
-    split: 'rgba(140, 170, 255, 0.14)',
-  },
-  bad: {
-    line: 'rgba(255, 108, 108, 0.95)',
-    node: '#ffc9c9',
-    area: [
-      [0, 'rgba(255, 96, 96, 0.24)'],
-      [1, 'rgba(255, 96, 96, 0.05)'],
-    ],
-    split: 'rgba(255, 108, 108, 0.16)',
-  },
+  good: { rgb: '244, 209, 128', line: 'rgba(244, 209, 128, 0.95)', node: '#ffe9b8' },
+  neutral: { rgb: '140, 170, 255', line: 'rgba(140, 170, 255, 0.92)', node: '#d3ddff' },
+  bad: { rgb: '255, 96, 96', line: 'rgba(255, 96, 96, 0.95)', node: '#ffc9c9' },
 };
 
+const PIERCE_COLOR = { good: 'rgba(255, 214, 132, 0.98)', bad: 'rgba(255, 84, 84, 0.98)' };
+
 const resizeBound = new WeakSet();
+const pulseTimers = new WeakMap();
 
 /* ================= 通用 ================= */
 
@@ -1512,6 +1501,16 @@ function seriesName(input, fallback) {
   return fallback;
 }
 
+function disposeChart(el) {
+  if (typeof echarts === 'undefined') return;
+  const instance = echarts.getInstanceByDom(el);
+  if (!instance) return;
+  const timer = pulseTimers.get(instance);
+  if (timer) clearInterval(timer);
+  pulseTimers.delete(instance);
+  instance.dispose();
+}
+
 function bindResize(el) {
   if (resizeBound.has(el)) return;
   resizeBound.add(el);
@@ -1526,8 +1525,7 @@ function createChart(dom) {
   if (typeof echarts === 'undefined') throw new Error('ECharts 未加载');
   const el = resolveElement(dom);
   el.innerHTML = '';
-  const exist = echarts.getInstanceByDom(el);
-  if (exist) exist.dispose();
+  disposeChart(el);
 
   const chart = echarts.init(el, null, { renderer: 'canvas' });
   bindResize(el);
@@ -1538,68 +1536,109 @@ function baseTextStyle() {
   return { color: 'rgba(238, 240, 248, 0.85)', fontFamily: FONT_FAMILY };
 }
 
-function areaOf(theme) {
+function areaGradient(rgb, k = 1) {
   return {
     type: 'radial',
     x: 0.5,
     y: 0.5,
     r: 0.5,
-    colorStops: THEMES[theme].area.map(([offset, color]) => ({ offset, color })),
+    colorStops: [
+      { offset: 0, color: `rgba(${rgb}, ${0.26 * k})` },
+      { offset: 1, color: `rgba(${rgb}, ${0.05 * k})` },
+    ],
   };
 }
 
-function radarBase(theme, radius = '62%') {
-  const palette = THEMES[theme];
+function radarBase(theme, radius = '58%') {
+  const line = `rgba(${THEMES[theme].rgb}, 0.16)`;
   return {
     center: ['50%', '50%'],
     radius,
     splitNumber: 4,
-    axisName: { color: 'rgba(238, 240, 248, 0.66)', fontSize: 11, fontFamily: FONT_FAMILY },
-    splitLine: { lineStyle: { color: palette.split } },
-    axisLine: { lineStyle: { color: palette.split } },
-    splitArea: {
-      areaStyle: {
-        color: ['rgba(255, 255, 255, 0.022)', 'rgba(255, 255, 255, 0.006)'],
-      },
-    },
+    axisName: { color: 'rgba(238, 240, 248, 0.6)', fontSize: 11, fontFamily: FONT_FAMILY },
+    splitLine: { lineStyle: { color: line } },
+    axisLine: { lineStyle: { color: line } },
+    splitArea: { areaStyle: { color: ['rgba(255,255,255,0.02)', 'rgba(255,255,255,0.005)'] } },
   };
 }
 
-/* ================= 单人雷达 ================= */
+/* ================= 判定 ================= */
 
 function analyse(raw) {
-  const valueOf = (key) => raw[DIMENSION_KEYS.indexOf(key)] || 0;
-  const avg = (keys) => keys.reduce((sum, key) => sum + valueOf(key), 0) / keys.length;
+  const byKey = (key) => raw[DIMENSION_KEYS.indexOf(key)] || 0;
+  const avg = (keys) => keys.reduce((sum, key) => sum + byKey(key), 0) / keys.length;
 
   const posAvg = avg(POSITIVE_AXES);
   const negAvg = avg(NEGATIVE_AXES);
   const spread = Math.max(...raw) - Math.min(...raw);
 
+  // 方向决定善恶：正向轴走高 = 神性；正向轴走低 = 恶性；负向轴反之
   const pierced = DIMENSION_KEYS.map((key, index) => {
     const value = raw[index];
     if (value < 94 && value > 6) return null;
-    return POSITIVE_AXES.includes(key) ? 'good' : 'bad';
+    const positive = POSITIVE_AXES.includes(key);
+    const good = positive ? value >= 94 : value <= 6;
+    return good ? 'good' : 'bad';
   });
 
   let theme = 'neutral';
   if (pierced.includes('bad')) theme = 'bad';
   else if (pierced.includes('good')) theme = 'good';
-  else if (spread >= 22) theme = posAvg >= negAvg ? 'good' : 'bad';
+  else if (spread >= 20) theme = posAvg >= negAvg ? 'good' : 'bad';
+  else if (Math.abs(posAvg - negAvg) >= 14) theme = posAvg > negAvg ? 'good' : 'bad';
 
   return { theme, pierced };
 }
 
-/**
- * 单 OC 雷达
- * @param {HTMLElement|string} dom 容器
- * @param {{ name?: string, scores: object }} data
- */
+/* ================= 雾气呼吸 ================= */
+
+function startPulse(chart, theme, name, value) {
+  const old = pulseTimers.get(chart);
+  if (old) clearInterval(old);
+
+  const rgb = THEMES[theme].rgb;
+  let phase = Math.random() * Math.PI * 2;
+  let tick = 0;
+
+  const timer = setInterval(() => {
+    if (!chart || chart.isDisposed()) {
+      clearInterval(timer);
+      return;
+    }
+
+    phase += 0.18;
+    tick += 1;
+    if (tick % 40 === 0) phase += Math.random() * 1.2; // 偶尔换口气，别像机械振动
+
+    const k = 0.72 + Math.sin(phase) * 0.28;
+
+    chart.setOption({
+      series: [
+        {
+          data: [
+            {
+              name,
+              value,
+              areaStyle: { color: areaGradient(rgb, k) },
+            },
+          ],
+        },
+      ],
+    });
+  }, 120);
+
+  pulseTimers.set(chart, timer);
+}
+
+/* ================= 单人雷达 ================= */
+
 function renderOCRadar(dom, data) {
   const chart = createChart(dom);
   const raw = toSeriesValue(data);
   const { theme, pierced } = analyse(raw);
+  const name = seriesName(data, 'OC');
 
-  // 离中位越远放大越多，让特点更明显
+  // 离中位越远放大越多
   const amplified = raw.map((value) => {
     const delta = value - 50;
     const factor = 1 + Math.min(Math.abs(delta) / 90, 0.45);
@@ -1607,16 +1646,38 @@ function renderOCRadar(dom, data) {
   });
 
   const indicator = DIMENSION_KEYS.map((key, index) => {
-    const mark = pierced[index];
     const label = DIMENSION_LABELS[key];
-    if (!mark) return { name: label, max: 100 };
-    return {
-      name: mark === 'good' ? `{pierceGood|${label}}` : `{pierceBad|${label}}`,
-      max: 82,
-    };
+    const mark = pierced[index];
+    if (mark === 'good') return { name: `{good|${label}}`, max: 64 };
+    if (mark === 'bad') return { name: `{bad|${label}}`, max: 64 };
+    return { name: `{plain|${label}}`, max: 100 };
   });
 
   const palette = THEMES[theme];
+
+  // 刺破的尖刺：同色维度合成一条线，从圆心射出去
+  const spikes = [];
+  for (const kind of ['good', 'bad']) {
+    if (!pierced.includes(kind)) continue;
+    const values = DIMENSION_KEYS.map((key, index) =>
+      pierced[index] === kind ? Math.min(120, amplified[index] * 1.18) : 0
+    );
+    spikes.push({
+      type: 'radar',
+      symbol: 'none',
+      silent: true,
+      z: 6,
+      lineStyle: {
+        width: 2.4,
+        color: PIERCE_COLOR[kind],
+        shadowColor: PIERCE_COLOR[kind],
+        shadowBlur: 22,
+        cap: 'round',
+      },
+      areaStyle: { color: 'rgba(0,0,0,0)' },
+      data: [{ value: values }],
+    });
+  }
 
   const option = {
     textStyle: baseTextStyle(),
@@ -1628,20 +1689,21 @@ function renderOCRadar(dom, data) {
       textStyle: { color: '#eef0f8', fontSize: 12, fontFamily: FONT_FAMILY },
       formatter: () =>
         DIMENSION_KEYS.map((key, index) => {
-          const mark = pierced[index] ? ' · 极端' : '';
+          const mark = pierced[index] ? (pierced[index] === 'good' ? ' · 神性' : ' · 恶性') : '';
           return `${DIMENSION_LABELS[key]}　${raw[index]}${mark}`;
         }).join('<br/>'),
     },
     radar: {
-      ...radarBase(theme, '62%'),
+      ...radarBase(theme, '56%'),
       indicator,
       axisName: {
-        color: 'rgba(238, 240, 248, 0.66)',
+        color: 'rgba(238, 240, 248, 0.6)',
         fontSize: 11,
         fontFamily: FONT_FAMILY,
         rich: {
-          pierceGood: { color: '#ffd88a', fontSize: 12, fontWeight: 600 },
-          pierceBad: { color: '#ff5d5d', fontSize: 12, fontWeight: 600 },
+          plain: { color: '#9fb2ff', fontSize: 11 },
+          good: { color: '#ffd88a', fontSize: 12, fontWeight: 700 },
+          bad: { color: '#ff5d5d', fontSize: 12, fontWeight: 700 },
         },
       },
     },
@@ -1649,30 +1711,32 @@ function renderOCRadar(dom, data) {
       {
         type: 'radar',
         symbolSize: 4,
+        z: 5,
         data: [
           {
-            name: seriesName(data, 'OC'),
+            name,
             value: amplified,
             lineStyle: {
-              width: 1.8,
+              width: 2,
               color: palette.line,
               shadowColor: palette.line,
-              shadowBlur: 12,
+              shadowBlur: 16,
             },
             itemStyle: { color: palette.node, borderColor: palette.line, borderWidth: 1 },
-            areaStyle: { color: areaOf(theme) },
+            areaStyle: { color: areaGradient(palette.rgb, 1) },
           },
         ],
       },
+      ...spikes,
     ],
   };
 
   chart.setOption(option, true);
-  chart.__theme = theme;
+  startPulse(chart, theme, name, amplified);
   return chart;
 }
 
-/* ================= 双人叠加（一实一虚） ================= */
+/* ================= 双人叠加 ================= */
 
 function renderOverlayRadar(dom, dataA, dataB) {
   const chart = createChart(dom);
@@ -1681,7 +1745,6 @@ function renderOverlayRadar(dom, dataA, dataB) {
   const nameA = seriesName(dataA, 'OC 1');
   const nameB = seriesName(dataB, 'OC 2');
   const themeA = analyse(toSeriesValue(dataA)).theme;
-  const paletteA = THEMES[themeA];
 
   const option = {
     textStyle: baseTextStyle(),
@@ -1700,7 +1763,7 @@ function renderOverlayRadar(dom, dataA, dataB) {
       textStyle: { color: 'rgba(238, 240, 248, 0.8)', fontSize: 11, fontFamily: FONT_FAMILY },
       data: [nameA, nameB],
     },
-    radar: { ...radarBase('neutral', '58%'), indicator },
+    radar: { ...radarBase('neutral', '56%'), indicator },
     series: [
       {
         type: 'radar',
@@ -1709,16 +1772,16 @@ function renderOverlayRadar(dom, dataA, dataB) {
           {
             name: nameA,
             value: toSeriesValue(dataA),
-            lineStyle: { width: 1.9, color: paletteA.line },
-            itemStyle: { color: paletteA.node },
-            areaStyle: { color: areaOf(themeA) },
+            lineStyle: { width: 1.9, color: THEMES[themeA].line },
+            itemStyle: { color: THEMES[themeA].node },
+            areaStyle: { color: areaGradient(THEMES[themeA].rgb, 0.8) },
           },
           {
             name: nameB,
             value: toSeriesValue(dataB),
-            lineStyle: { width: 1.4, type: 'dashed', color: 'rgba(142, 162, 255, 0.75)' },
-            itemStyle: { color: 'rgba(142, 162, 255, 0.7)' },
-            areaStyle: { color: 'rgba(142, 162, 255, 0.06)' },
+            lineStyle: { width: 1.4, type: 'dashed', color: 'rgba(200, 210, 255, 0.7)' },
+            itemStyle: { color: 'rgba(200, 210, 255, 0.7)' },
+            areaStyle: { color: 'rgba(200, 210, 255, 0.05)' },
           },
         ],
       },
@@ -1755,7 +1818,7 @@ function renderDerivedRadar(dom, derivedData) {
       borderWidth: 1,
       textStyle: { color: '#eef0f8', fontSize: 12, fontFamily: FONT_FAMILY },
     },
-    radar: { ...radarBase('good', '60%'), indicator },
+    radar: { ...radarBase('good', '58%'), indicator },
     series: [
       {
         type: 'radar',
@@ -1765,9 +1828,14 @@ function renderDerivedRadar(dom, derivedData) {
           {
             name: '合盘',
             value: data,
-            lineStyle: { width: 1.8, color: THEMES.good.line, shadowColor: THEMES.good.line, shadowBlur: 10 },
+            lineStyle: {
+              width: 1.9,
+              color: THEMES.good.line,
+              shadowColor: THEMES.good.line,
+              shadowBlur: 14,
+            },
             itemStyle: { color: THEMES.good.node, borderColor: THEMES.good.line, borderWidth: 1 },
-            areaStyle: { color: areaOf('good') },
+            areaStyle: { color: areaGradient(THEMES.good.rgb, 1) },
             label: {
               show: true,
               color: '#eef0f8',
