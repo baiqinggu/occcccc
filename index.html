@@ -3,212 +3,202 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-  <meta name="theme-color" content="#08080a" />
+  <meta name="theme-color" content="#0a0a10" />
   <title>OC 心理侧写 × CP 匹配引擎</title>
   <style>
-/* public/style.css —— 暗黑极简 · 第一幕/第二幕 */
+/* public/style.css —— 暗夜线稿 · 四幕 */
 
 :root {
-  --bg: #08080a;
-  --bg-soft: #0e0e12;
-  --surface: rgba(255, 255, 255, 0.032);
-  --surface-2: rgba(255, 255, 255, 0.055);
-  --line: rgba(255, 255, 255, 0.08);
-  --line-strong: rgba(255, 255, 255, 0.18);
-  --text: #f0f0f4;
-  --muted: #8a8a96;
-  --muted-2: #61615c;
-  --accent: #8ea2ff;
+  --bg: #08080e;
+  --bg-2: #0d0d16;
+  --surface: rgba(255, 255, 255, 0.038);
+  --surface-2: rgba(255, 255, 255, 0.06);
+  --line: rgba(190, 200, 255, 0.12);
+  --line-strong: rgba(200, 210, 255, 0.24);
+  --text: #eef0f8;
+  --muted: #9195ad;
+  --muted-2: #5e627a;
+  --accent: #9aabff;
+  --accent-soft: rgba(154, 171, 255, 0.14);
   --ok: #7fe0b0;
-  --danger: #ff8a9b;
-  --radius: 16px;
+  --danger: #ff8fa3;
+  --radius: 18px;
   --ease: cubic-bezier(0.22, 0.68, 0.24, 1);
 }
 
 * { box-sizing: border-box; }
-
 [hidden] { display: none !important; }
-
 html, body { margin: 0; padding: 0; }
 
 body {
   min-height: 100vh;
   background:
-    radial-gradient(1200px 700px at 50% -30%, rgba(142, 162, 255, 0.10), transparent 70%),
-    radial-gradient(900px 600px at 85% 110%, rgba(255, 255, 255, 0.035), transparent 70%),
+    radial-gradient(1200px 800px at 78% -10%, rgba(122, 138, 255, 0.16), transparent 62%),
+    radial-gradient(900px 700px at 8% 100%, rgba(122, 138, 255, 0.09), transparent 60%),
     var(--bg);
   color: var(--text);
-  font-family: "PingFang SC", "Noto Sans SC", "Microsoft YaHei", system-ui, -apple-system, sans-serif;
+  font-family: "PingFang SC", "Noto Sans SC", "Microsoft YaHei", system-ui, sans-serif;
   -webkit-font-smoothing: antialiased;
   overflow-x: hidden;
 }
 
-/* 细颗粒底纹 */
-body::after {
-  content: "";
+/* ================= 背景玫瑰 ================= */
+
+.backdrop {
   position: fixed;
-  inset: 0;
+  inset: -6%;
   z-index: 0;
   pointer-events: none;
-  opacity: 0.045;
+  transition: transform 0.6s var(--ease);
+}
+
+.rose {
+  position: absolute;
+  top: 4%;
+  right: -4%;
+  width: min(560px, 62vw);
+  height: auto;
+  opacity: 0.42;
+  animation: breathe 9s ease-in-out infinite;
+}
+
+@keyframes breathe {
+  0%, 100% { opacity: 0.34; }
+  50% { opacity: 0.5; }
+}
+
+.rose-lines path {
+  stroke-dasharray: 1400;
+  stroke-dashoffset: 1400;
+  animation: draw 2.8s var(--ease) forwards;
+}
+
+.rose-lines path:nth-child(2) { animation-delay: 0.25s; }
+.rose-lines path:nth-child(3) { animation-delay: 0.5s; }
+.rose-lines path:nth-child(4) { animation-delay: 0.8s; }
+.rose-lines path:nth-child(5) { animation-delay: 1.05s; }
+.rose-lines path:nth-child(6) { animation-delay: 1.3s; }
+.rose-lines path:nth-child(7) { animation-delay: 1.5s; }
+.rose-lines path:nth-child(8) { animation-delay: 1.75s; }
+.rose-lines path:nth-child(9) { animation-delay: 1.95s; }
+.rose-lines path:nth-child(10) { animation-delay: 2.1s; }
+.rose-lines path:nth-child(11) { animation-delay: 2.25s; }
+.rose-lines path:nth-child(12) { animation-delay: 2.4s; }
+
+@keyframes draw {
+  to { stroke-dashoffset: 0; }
+}
+
+.grain {
+  position: absolute;
+  inset: 0;
+  opacity: 0.05;
   background-image: radial-gradient(rgba(255, 255, 255, 0.9) 0.5px, transparent 0.5px);
   background-size: 3px 3px;
 }
 
-/* ================= 开场幕 ================= */
-
-.intro {
-  position: fixed;
-  inset: 0;
-  z-index: 90;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 14px;
-  background: var(--bg);
-  animation: introOut 0.9s var(--ease) 1.15s forwards;
-}
-
-.intro-rule {
-  width: 46px;
-  height: 1px;
-  background: var(--line-strong);
-  animation: introRise 0.9s var(--ease) both;
-}
-
-.intro-title {
-  margin: 0;
-  font-family: "Songti SC", "Noto Serif SC", "Source Han Serif SC", serif;
-  font-size: clamp(26px, 4.4vw, 40px);
-  font-weight: 500;
-  letter-spacing: 0.22em;
-  text-indent: 0.22em;
-  animation: introRise 1s var(--ease) 0.08s both;
-}
-
-.intro-sub {
-  margin: 0;
-  font-size: 10px;
-  letter-spacing: 0.42em;
-  color: var(--muted-2);
-  animation: introRise 1s var(--ease) 0.2s both;
-}
-
-@keyframes introRise {
-  from { opacity: 0; transform: translateY(14px); filter: blur(6px); }
-  to { opacity: 1; transform: none; filter: blur(0); }
-}
-
-@keyframes introOut {
-  to { opacity: 0; visibility: hidden; }
-}
-
-/* ================= 屏幕 ================= */
+/* ================= 屏幕切换 ================= */
 
 .screen {
   position: relative;
   z-index: 1;
-  opacity: 0;
-  transform: translateY(10px);
-  transition: opacity 0.5s var(--ease), transform 0.5s var(--ease);
-}
-
-.screen.is-active { opacity: 1; transform: none; }
-
-.screen.is-leaving { opacity: 0; transform: scale(0.985); }
-
-.screen-gate {
   min-height: 100vh;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 48px 20px;
+  padding: 44px 24px 56px;
+  opacity: 0;
+  transform: translateY(12px) scale(0.994);
+  filter: blur(4px);
+  transition: opacity 0.42s var(--ease), transform 0.42s var(--ease), filter 0.42s var(--ease);
 }
 
-/* ================= 第一幕：契约卡 ================= */
+.screen.is-active { opacity: 1; transform: none; filter: blur(0); }
+.screen.is-out { opacity: 0; transform: translateY(-10px) scale(0.994); filter: blur(6px); }
 
-.gate-card {
-  width: min(420px, 100%);
-  padding: 40px 34px 30px;
+#screen-1 { display: flex; align-items: center; justify-content: center; }
+
+/* ================= 第一幕 ================= */
+
+.gate {
+  width: min(430px, 100%);
+  padding: 38px 32px 28px;
   border: 1px solid var(--line);
   border-radius: var(--radius);
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.045), rgba(255, 255, 255, 0.012));
-  box-shadow: 0 40px 100px rgba(0, 0, 0, 0.55);
-  -webkit-backdrop-filter: blur(12px);
-  backdrop-filter: blur(12px);
-}
-
-.screen-gate.is-active .gate-card {
-  animation: cardIn 0.9s var(--ease) 1.35s both;
-}
-
-.screen-gate.is-active.is-fast .gate-card { animation-delay: 0.1s; }
-
-@keyframes cardIn {
-  from { opacity: 0; transform: translateY(18px) scale(0.985); }
-  to { opacity: 1; transform: none; }
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.05), rgba(255, 255, 255, 0.012));
+  box-shadow: 0 50px 120px rgba(0, 0, 0, 0.6), inset 0 1px 0 rgba(255, 255, 255, 0.06);
+  -webkit-backdrop-filter: blur(14px);
+  backdrop-filter: blur(14px);
 }
 
 .eyebrow {
-  margin: 0 0 14px;
+  margin: 0 0 12px;
   font-size: 10px;
   letter-spacing: 0.34em;
   color: var(--muted-2);
   text-transform: uppercase;
 }
 
-.gate-title {
+.display {
   margin: 0 0 10px;
-  font-family: "Songti SC", "Noto Serif SC", serif;
-  font-size: 25px;
+  font-family: "Songti SC", "Noto Serif SC", "Source Han Serif SC", serif;
+  font-size: 26px;
   font-weight: 500;
-  line-height: 1.55;
-  letter-spacing: 0.06em;
+  line-height: 1.6;
+  letter-spacing: 0.05em;
 }
 
-.gate-desc {
-  margin: 0 0 26px;
+.display--sm { font-size: 32px; margin: 0; }
+
+.lede {
+  margin: 0 0 24px;
   font-size: 12.5px;
   line-height: 1.9;
   color: var(--muted);
 }
 
-/* ================= 表单 ================= */
-
-.field { margin-bottom: 14px; }
-
-.field label {
+.label {
   display: block;
-  margin-bottom: 8px;
+  margin: 0 0 8px;
   font-size: 11px;
   letter-spacing: 0.16em;
   color: var(--muted);
 }
 
-input[type="text"] {
+.input,
+.textarea {
   width: 100%;
   padding: 13px 14px;
   border: 1px solid var(--line);
-  border-radius: 10px;
-  background: rgba(0, 0, 0, 0.42);
+  border-radius: 11px;
+  background: rgba(0, 0, 0, 0.45);
   color: var(--text);
   font-family: inherit;
   font-size: 14px;
-  letter-spacing: 0.04em;
+  letter-spacing: 0.03em;
   outline: none;
-  transition: border-color 0.2s, background 0.2s;
+  transition: border-color 0.2s, box-shadow 0.2s, background 0.2s;
 }
 
-input[type="text"]::placeholder { color: #4d4d57; }
+.input::placeholder,
+.textarea::placeholder { color: #4d5068; }
 
-input[type="text"]:focus {
-  border-color: rgba(255, 255, 255, 0.34);
-  background: rgba(0, 0, 0, 0.6);
+.input:focus,
+.textarea:focus {
+  border-color: rgba(154, 171, 255, 0.5);
+  box-shadow: 0 0 0 3px rgba(154, 171, 255, 0.1);
 }
 
-/* ================= 按钮：去渐变 ================= */
+select.input {
+  appearance: none;
+  cursor: pointer;
+  background-image: linear-gradient(45deg, transparent 50%, var(--muted) 50%),
+    linear-gradient(135deg, var(--muted) 50%, transparent 50%);
+  background-position: calc(100% - 18px) 20px, calc(100% - 13px) 20px;
+  background-size: 5px 5px, 5px 5px;
+  background-repeat: no-repeat;
+}
 
+.textarea { min-height: 140px; line-height: 1.8; resize: vertical; }
+
+/* 按钮 */
 .btn {
   display: inline-flex;
   align-items: center;
@@ -216,436 +206,444 @@ input[type="text"]:focus {
   width: 100%;
   padding: 13px 18px;
   border: 1px solid transparent;
-  border-radius: 10px;
+  border-radius: 11px;
   font-family: inherit;
   font-size: 13.5px;
   letter-spacing: 0.14em;
   cursor: pointer;
-  transition: background 0.2s, border-color 0.2s, color 0.2s, transform 0.12s, opacity 0.2s;
+  transition: background 0.2s, border-color 0.2s, color 0.2s, opacity 0.2s, transform 0.12s;
 }
 
 .btn:active:not(:disabled) { transform: translateY(1px); }
-
 .btn:disabled { opacity: 0.4; cursor: not-allowed; }
 
-/* 主按钮：近白实底 + 深色字（无渐变） */
-.btn-primary {
-  background: #e9e9ef;
-  color: #0a0a0c;
-  font-weight: 600;
-}
+.btn-solid { background: #eceef6; color: #0a0a12; font-weight: 600; }
+.btn-solid:hover:not(:disabled) { background: #ffffff; }
 
-.btn-primary:hover:not(:disabled) { background: #ffffff; }
-
-/* 次按钮：描边 */
-.btn-secondary {
+.btn-line {
   background: transparent;
   border-color: var(--line-strong);
   color: var(--text);
 }
+.btn-line:hover:not(:disabled) { border-color: rgba(154, 171, 255, 0.55); background: rgba(154, 171, 255, 0.06); }
 
-.btn-secondary:hover:not(:disabled) {
-  border-color: rgba(255, 255, 255, 0.42);
-  background: rgba(255, 255, 255, 0.04);
-}
+.btn-quiet { background: transparent; border-color: var(--line); color: var(--muted); }
+.btn-quiet:hover:not(:disabled) { color: var(--text); border-color: var(--line-strong); }
 
-/* 幽灵按钮 */
-.btn-ghost {
-  background: transparent;
-  border-color: var(--line);
-  color: var(--muted);
-}
+.btn-sm { width: auto; padding: 9px 16px; font-size: 12px; letter-spacing: 0.08em; }
 
-.btn-ghost:hover:not(:disabled) {
-  color: var(--text);
-  border-color: var(--line-strong);
-}
+.gate .btn-solid { margin-top: 6px; }
+.gate .btn-line { margin-top: 4px; }
 
-.btn-sm {
-  width: auto;
-  padding: 10px 18px;
-  font-size: 12px;
-  letter-spacing: 0.1em;
-}
-
-/* ================= 密钥 / 分割线 / 状态 ================= */
-
-.key-out {
-  margin-top: 18px;
+.key-slot {
+  margin-top: 16px;
   padding: 12px 14px;
   border: 1px solid var(--line);
   border-left: 2px solid var(--accent);
-  border-radius: 8px;
-  background: rgba(142, 162, 255, 0.05);
+  border-radius: 9px;
+  background: var(--accent-soft);
 }
 
-.key-label {
+.key-slot__label {
   display: block;
-  margin-bottom: 5px;
+  margin-bottom: 4px;
   font-size: 10px;
   letter-spacing: 0.2em;
   color: var(--muted-2);
 }
 
-.key-out code {
+.key-slot code {
   font-family: ui-monospace, Consolas, monospace;
   font-size: 14px;
   letter-spacing: 0.14em;
-  color: #dfe3ff;
+  color: #d8deff;
   word-break: break-all;
 }
 
-.gate-divider {
+.rule {
   display: flex;
   align-items: center;
   gap: 12px;
-  margin: 26px 0 18px;
+  margin: 24px 0 16px;
   font-size: 10px;
   letter-spacing: 0.24em;
   color: var(--muted-2);
 }
 
-.gate-divider::before,
-.gate-divider::after {
-  content: "";
-  flex: 1;
-  height: 1px;
-  background: var(--line);
-}
+.rule::before,
+.rule::after { content: ""; flex: 1; height: 1px; background: var(--line); }
 
-.session {
-  margin: 16px 0 0;
-  font-size: 11px;
-  letter-spacing: 0.1em;
-  color: var(--muted-2);
-}
-
-.session.is-online { color: var(--ok); }
-
-/* ================= 第二幕 ================= */
-
-.screen-app {
-  min-height: 100vh;
+.gate__session {
   display: flex;
-  flex-direction: column;
-  padding: 44px 24px 60px;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-top: 18px;
+  padding-top: 16px;
+  border-top: 1px solid var(--line);
+  font-size: 11.5px;
+  color: var(--muted);
 }
 
-.app-header {
+/* ================= 顶栏 ================= */
+
+.topbar {
   width: min(1080px, 100%);
-  margin: 0 auto 26px;
+  margin: 0 auto 22px;
   display: flex;
   align-items: flex-end;
   justify-content: space-between;
-  gap: 20px;
+  gap: 18px;
   flex-wrap: wrap;
 }
 
-.app-title {
+.topbar--oc { align-items: center; }
+
+.headline {
   margin: 0;
   font-family: "Songti SC", "Noto Serif SC", serif;
-  font-size: clamp(20px, 2.6vw, 27px);
+  font-size: clamp(19px, 2.4vw, 26px);
   font-weight: 500;
-  letter-spacing: 0.06em;
+  letter-spacing: 0.05em;
 }
 
-.session--app { margin: 0; }
+.topbar__right { display: flex; align-items: center; gap: 10px; }
 
-.app-main {
+.who { font-size: 11.5px; color: var(--muted); }
+
+/* ================= 第二幕 ================= */
+
+.stage {
   width: min(1080px, 100%);
   margin: 0 auto;
   display: grid;
-  grid-template-columns: 1.35fr 1fr;
-  gap: 20px;
+  grid-template-columns: 1.5fr 1fr;
+  gap: 18px;
   align-items: start;
 }
 
-/* 模块 */
-.module {
+.card {
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--surface);
+  padding: 26px 24px 22px;
+}
+
+.card--main {
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.055), rgba(255, 255, 255, 0.014));
+  border-color: var(--line-strong);
+  box-shadow: 0 30px 80px rgba(0, 0, 0, 0.45);
+}
+
+.card__title { margin: 0 0 20px; font-size: 15px; font-weight: 500; letter-spacing: 0.05em; }
+.card--side .card__title { font-size: 13px; color: var(--muted); margin-bottom: 16px; }
+
+.form-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  margin-bottom: 18px;
+}
+
+/* 上传框 */
+.drop {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+  height: 84px;
+  border: 1px dashed var(--line-strong);
+  border-radius: 11px;
+  background: rgba(255, 255, 255, 0.02);
+  cursor: pointer;
+  text-align: center;
+  padding: 0 12px;
+  transition: border-color 0.25s, background 0.25s, box-shadow 0.35s, transform 0.25s;
+}
+
+.drop:hover { border-color: rgba(154, 171, 255, 0.45); background: rgba(154, 171, 255, 0.05); }
+
+.drop__icon { font-size: 15px; color: var(--muted); }
+.drop__text { font-size: 12.5px; }
+.drop__hint { font-size: 10px; color: var(--muted-2); }
+
+/* 上传成功：发光 + 变绿 */
+.drop.is-loaded {
+  border-style: solid;
+  border-color: rgba(127, 224, 176, 0.7);
+  background: rgba(127, 224, 176, 0.08);
+  box-shadow: 0 0 0 1px rgba(127, 224, 176, 0.25), 0 0 26px rgba(127, 224, 176, 0.22);
+  animation: pop 0.45s var(--ease);
+}
+
+.drop.is-loaded .drop__icon { color: var(--ok); }
+.drop.is-loaded .drop__text { color: var(--ok); }
+
+@keyframes pop {
+  0% { transform: scale(0.985); }
+  60% { transform: scale(1.012); }
+  100% { transform: scale(1); }
+}
+
+.hint { margin: 14px 0 0; font-size: 11px; line-height: 1.85; color: var(--muted-2); }
+
+/* 角色列表 */
+.oc-list { display: flex; flex-direction: column; gap: 8px; max-height: 320px; overflow-y: auto; }
+
+.oc-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  width: 100%;
+  padding: 11px 13px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.02);
+  color: var(--text);
+  font-family: inherit;
+  font-size: 13px;
+  text-align: left;
+  cursor: pointer;
+  transition: border-color 0.2s, background 0.2s, transform 0.2s;
+}
+
+.oc-item:hover {
+  border-color: rgba(154, 171, 255, 0.45);
+  background: rgba(154, 171, 255, 0.06);
+  transform: translateX(2px);
+}
+
+.oc-item__code {
+  font-family: ui-monospace, Consolas, monospace;
+  font-size: 10.5px;
+  color: var(--muted-2);
+  letter-spacing: 0.1em;
+}
+
+.empty { margin: 0; font-size: 12px; color: var(--muted-2); }
+
+.import-row { display: flex; gap: 8px; }
+.import-row .input { flex: 1; padding: 10px 12px; font-size: 12.5px; }
+
+/* 第二幕页脚 */
+.footer-bar {
+  width: min(1080px, 100%);
+  margin: 24px auto 0;
+  padding-top: 18px;
+  border-top: 1px solid var(--line);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  flex-wrap: wrap;
+}
+
+.coupon-row { display: flex; gap: 8px; align-items: center; }
+.coupon-row .input { width: 190px; padding: 9px 12px; font-size: 12px; }
+
+/* ================= 第三幕：角色页 ================= */
+
+.oc-page { width: min(1080px, 100%); margin: 0 auto; }
+
+.oc-head {
+  display: flex;
+  align-items: baseline;
+  gap: 16px;
+  flex-wrap: wrap;
+  margin-bottom: 22px;
+}
+
+.oc-head .eyebrow { margin: 0; width: 100%; }
+
+.code-chip {
+  padding: 6px 12px;
+  border: 1px solid var(--line-strong);
+  border-radius: 999px;
+  background: rgba(154, 171, 255, 0.08);
+  color: #d8deff;
+  font-family: ui-monospace, Consolas, monospace;
+  font-size: 11.5px;
+  letter-spacing: 0.12em;
+  cursor: pointer;
+  transition: background 0.2s, border-color 0.2s;
+}
+
+.code-chip:hover { background: rgba(154, 171, 255, 0.16); border-color: rgba(154, 171, 255, 0.5); }
+
+.oc-body {
+  display: grid;
+  grid-template-columns: 1.05fr 1fr;
+  gap: 18px;
+  align-items: start;
+}
+
+.oc-chart {
+  height: 470px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: radial-gradient(circle at 50% 50%, rgba(154, 171, 255, 0.09), transparent 68%);
+}
+
+.oc-text { display: flex; flex-direction: column; gap: 14px; }
+
+.panel {
+  padding: 20px 22px;
   border: 1px solid var(--line);
   border-radius: var(--radius);
   background: var(--surface);
 }
 
-.module-head { margin-bottom: 20px; }
+.review { margin: 0; font-size: 13.5px; line-height: 2.05; color: #dfe2f2; }
 
-.module-head h3 {
-  margin: 0;
-  font-size: 15px;
-  font-weight: 500;
-  letter-spacing: 0.06em;
+.dims { margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 10px; }
+
+.dims li {
+  display: grid;
+  grid-template-columns: 72px 1fr;
+  gap: 12px;
+  font-size: 12.5px;
+  line-height: 1.8;
+  color: var(--muted);
+  padding-bottom: 10px;
+  border-bottom: 1px dashed rgba(190, 200, 255, 0.09);
 }
 
-/* 主模块：更亮、更大 */
-.module-primary {
-  padding: 30px 28px 26px;
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.05), rgba(255, 255, 255, 0.015));
-  border-color: var(--line-strong);
-  box-shadow: 0 30px 80px rgba(0, 0, 0, 0.45);
+.dims li:last-child { border-bottom: none; padding-bottom: 0; }
+.dims b { color: var(--text); font-weight: 500; letter-spacing: 0.04em; }
+
+/* ================= 第四幕：合盘 ================= */
+
+.stage--match { display: block; }
+
+.match-pick {
+  display: grid;
+  grid-template-columns: 1fr 1fr auto;
+  gap: 14px;
+  align-items: end;
+  margin-bottom: 20px;
 }
 
-/* 次模块：压暗、缩小、弱化 */
-.module-secondary {
-  padding: 22px 20px 18px;
-  background: rgba(255, 255, 255, 0.016);
-  border-color: rgba(255, 255, 255, 0.055);
-}
-
-.module-secondary .module-head h3 { font-size: 13px; color: var(--muted); }
-
-.module-secondary .eyebrow { color: var(--muted-2); }
-
-.form-grid {
+.radar-pair {
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 14px;
 }
 
-.file-drop {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 4px;
-  height: 47px;
-  border: 1px dashed var(--line-strong);
-  border-radius: 10px;
-  background: rgba(255, 255, 255, 0.02);
-  cursor: pointer;
-  transition: border-color 0.2s, background 0.2s;
-}
-
-.file-drop:hover {
-  border-color: rgba(255, 255, 255, 0.4);
-  background: rgba(255, 255, 255, 0.05);
-}
-
-.file-title { font-size: 12.5px; }
-.file-hint { font-size: 10px; color: var(--muted-2); }
-
-.file-name {
-  margin: 14px 0;
-  font-size: 11.5px;
-  color: var(--muted);
-  word-break: break-all;
-}
-
-.tips {
-  margin: 14px 0 0;
-  font-size: 11px;
-  line-height: 1.85;
-  color: var(--muted-2);
-}
-
-/* 雷达 */
-.radar-stage {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 10px;
-}
-
-.radar-slot {
-  border: 1px solid rgba(255, 255, 255, 0.05);
-  border-radius: 10px;
-  background: rgba(0, 0, 0, 0.25);
-  padding: 8px;
-}
-
-.slot-title {
-  margin: 0 0 4px;
-  font-size: 10.5px;
-  letter-spacing: 0.1em;
-  color: var(--muted-2);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.radar-canvas {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 100%;
-  height: 250px;
+.radar-box {
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--surface);
+  padding: 12px;
   transform-origin: center;
 }
 
-.radar-canvas--derived { height: 340px; }
+.radar-box--wide { margin-bottom: 14px; }
 
-.chart-empty {
+.radar-box__title {
+  margin: 0 0 6px;
   font-size: 11px;
-  letter-spacing: 0.16em;
-  color: #4a4a52;
-}
-
-.match-bar {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  flex-wrap: wrap;
-  margin-top: 16px;
-}
-
-.match-hint {
-  margin: 0;
-  font-size: 11px;
-  color: var(--muted-2);
-}
-
-.derived { margin-top: 18px; }
-
-.match-entry {
-  margin-top: 14px;
-  padding: 16px 18px;
-  border: 1px solid var(--line);
-  border-left: 2px solid var(--accent);
-  border-radius: 10px;
-  background: rgba(142, 162, 255, 0.04);
-}
-
-.entry-title {
-  margin: 0 0 8px;
-  font-family: "Songti SC", "Noto Serif SC", serif;
-  font-size: 17px;
-  letter-spacing: 0.05em;
-}
-
-.entry-desc {
-  margin: 0;
-  font-size: 12.5px;
-  line-height: 1.95;
+  letter-spacing: 0.12em;
   color: var(--muted);
 }
 
-.explode-anim {
-  transform: scale(1.18);
-  opacity: 0;
-  transition: all 0.5s ease-in-out;
-}
+.radar-box__canvas { width: 100%; height: 340px; display: flex; align-items: center; justify-content: center; }
 
-/* ================= 页脚 ================= */
+.derived { margin-top: 16px; }
 
-.app-footer {
-  width: min(1080px, 100%);
-  margin: 30px auto 0;
-}
-
-.footer-inner {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 14px;
-  flex-wrap: wrap;
-  padding-top: 22px;
-  border-top: 1px solid var(--line);
-}
-
-.coupon-row {
-  display: flex;
-  gap: 10px;
-  align-items: center;
-}
-
-.coupon-row input {
-  width: 190px;
-  padding: 10px 12px;
-  font-size: 12px;
-}
-
-/* ================= 弹窗 ================= */
-
-.modal {
-  position: fixed;
-  inset: 0;
-  z-index: 60;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 24px;
-}
-
-.modal-backdrop {
-  position: absolute;
-  inset: 0;
-  background: rgba(0, 0, 0, 0.72);
-  -webkit-backdrop-filter: blur(8px);
-  backdrop-filter: blur(8px);
-}
-
-.modal-card {
-  position: relative;
-  width: min(520px, 100%);
-  padding: 28px;
-  border: 1px solid var(--line-strong);
+.entry {
+  padding: 20px 22px;
+  border: 1px solid var(--line);
+  border-left: 2px solid var(--accent);
   border-radius: var(--radius);
-  background: #101014;
-  box-shadow: 0 40px 100px rgba(0, 0, 0, 0.7);
-  animation: cardIn 0.4s var(--ease) both;
+  background: var(--accent-soft);
 }
 
-.modal-title {
+.entry__title {
   margin: 0 0 8px;
   font-family: "Songti SC", "Noto Serif SC", serif;
   font-size: 18px;
-  font-weight: 500;
+  letter-spacing: 0.05em;
 }
 
-.modal-tip {
-  margin: 0 0 16px;
-  font-size: 12px;
-  line-height: 1.85;
-  color: var(--muted);
+.entry__body { margin: 0; font-size: 12.5px; line-height: 1.95; color: var(--muted); }
+
+.explode-anim { transform: scale(1.15); opacity: 0; transition: all 0.5s ease-in-out; }
+
+/* ================= 弹窗 / Toast ================= */
+
+.modal { position: fixed; inset: 0; z-index: 70; display: flex; align-items: center; justify-content: center; padding: 24px; }
+.modal__mask { position: absolute; inset: 0; background: rgba(0, 0, 0, 0.72); backdrop-filter: blur(8px); }
+
+.modal__card {
+  position: relative;
+  width: min(520px, 100%);
+  padding: 26px;
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius);
+  background: #10101a;
+  box-shadow: 0 40px 100px rgba(0, 0, 0, 0.7);
+  animation: pop 0.35s var(--ease);
 }
 
-.modal-textarea {
-  width: 100%;
-  min-height: 140px;
-  padding: 14px;
-  border: 1px solid var(--line);
-  border-radius: 10px;
-  background: rgba(0, 0, 0, 0.5);
-  color: var(--text);
-  font-family: inherit;
-  font-size: 13px;
-  line-height: 1.8;
-  resize: vertical;
-  outline: none;
-}
+.modal__title { margin: 0 0 8px; font-family: "Songti SC", "Noto Serif SC", serif; font-size: 18px; font-weight: 500; }
+.modal__tip { margin: 0 0 14px; font-size: 12px; line-height: 1.8; color: var(--muted); }
+.modal__meta { display: flex; justify-content: space-between; margin: 10px 0 18px; font-size: 10.5px; color: var(--muted-2); }
+.modal__err { color: var(--danger); }
+.modal__actions { display: flex; justify-content: flex-end; gap: 10px; }
 
-.modal-textarea:focus { border-color: rgba(255, 255, 255, 0.32); }
-
-.modal-meta {
+.toast-wrap {
+  position: fixed;
+  left: 50%;
+  bottom: 40px;
+  z-index: 80;
+  transform: translateX(-50%);
   display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-  margin: 10px 0 18px;
-  font-size: 10.5px;
-  letter-spacing: 0.08em;
-  color: var(--muted-2);
-}
-
-.modal-error { color: var(--danger); }
-
-.modal-actions {
-  display: flex;
-  justify-content: flex-end;
+  flex-direction: column;
   gap: 10px;
+  align-items: center;
+  pointer-events: none;
 }
+
+.toast {
+  padding: 12px 20px;
+  border: 1px solid var(--line-strong);
+  border-radius: 999px;
+  background: rgba(16, 16, 26, 0.94);
+  color: var(--text);
+  font-size: 12.5px;
+  letter-spacing: 0.05em;
+  box-shadow: 0 18px 50px rgba(0, 0, 0, 0.55);
+  animation: toastIn 0.32s var(--ease);
+  max-width: min(560px, 88vw);
+  text-align: center;
+  line-height: 1.6;
+}
+
+.toast--ok { border-color: rgba(127, 224, 176, 0.5); color: #cdf6e4; }
+.toast--err { border-color: rgba(255, 143, 163, 0.5); color: #ffd2da; }
+.toast.is-out { animation: toastOut 0.3s var(--ease) forwards; }
+
+@keyframes toastIn { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: none; } }
+@keyframes toastOut { to { opacity: 0; transform: translateY(10px); } }
 
 /* ================= 响应式 ================= */
 
-@media (max-width: 900px) {
-  .app-main { grid-template-columns: 1fr; }
-  .radar-canvas { height: 220px; }
+@media (max-width: 960px) {
+  .stage { grid-template-columns: 1fr; }
+  .oc-body { grid-template-columns: 1fr; }
+  .oc-chart { height: 380px; }
+  .match-pick { grid-template-columns: 1fr; }
+  .radar-pair { grid-template-columns: 1fr; }
+  .rose { width: 78vw; opacity: 0.3; }
 }
 
 @media (max-width: 620px) {
-  .screen-app { padding: 30px 16px 48px; }
-  .module-primary { padding: 24px 20px 22px; }
+  .screen { padding: 28px 16px 44px; }
+  .gate { padding: 30px 22px 24px; }
   .form-grid { grid-template-columns: 1fr; }
-  .gate-card { padding: 32px 22px 24px; }
-  .coupon-row input { width: 150px; }
+  .display { font-size: 22px; }
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -655,148 +653,227 @@ input[type="text"]:focus {
   </style>
 </head>
 <body>
-  <!-- 开场幕 -->
-  <div class="intro" id="intro" aria-hidden="true">
-    <div class="intro-rule"></div>
-    <h1 class="intro-title">OC 心理侧写</h1>
-    <p class="intro-sub">PERSONA&nbsp;&nbsp;PROFILE&nbsp;&nbsp;ENGINE</p>
+  <!-- 背景：单线玫瑰 -->
+  <div class="backdrop" id="backdrop" aria-hidden="true">
+    <svg class="rose" viewBox="0 0 620 760" fill="none" preserveAspectRatio="xMidYMid meet">
+      <defs>
+        <linearGradient id="roseGrad" x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0%" stop-color="#e6e9ff" stop-opacity="0.95" />
+          <stop offset="52%" stop-color="#9aabff" stop-opacity="0.6" />
+          <stop offset="100%" stop-color="#6f5be0" stop-opacity="0.22" />
+        </linearGradient>
+        <filter id="roseGlow" x="-30%" y="-30%" width="160%" height="160%">
+          <feGaussianBlur stdDeviation="3.2" result="blur" />
+          <feMerge>
+            <feMergeNode in="blur" />
+            <feMergeNode in="SourceGraphic" />
+          </feMerge>
+        </filter>
+      </defs>
+      <g class="rose-lines" stroke="url(#roseGrad)" stroke-width="1.15" stroke-linecap="round" stroke-linejoin="round" filter="url(#roseGlow)">
+        <path d="M310 300c-7-19 4-36 23-38 26-3 45 15 45 38 0 32-24 55-53 59-42 6-77-21-81-61-5-51 34-91 88-93" />
+        <path d="M332 300c-3-9 3-16 11-17 11-1 19 7 19 17 0 14-11 25-24 26" />
+        <path d="M310 300c0 36 26 62 62 63 52 2 92-42 93-96" />
+        <path d="M188 268c-26-4-42 24-28 46 12 19 38 20 52 4" />
+        <path d="M420 210c30-8 55 18 45 46-8 23-36 32-56 18" />
+        <path d="M226 210c-22-24-8-60 22-66 24-5 46 10 52 32" />
+        <path d="M300 414c0 54-14 100-46 140-18 23-40 40-64 52" />
+        <path d="M286 470c-30-16-64-10-84 12 26 16 62 12 84-12z" />
+        <path d="M268 540c-26-14-56-8-74 12 24 14 56 8 74-12z" />
+        <path d="M262 505l-12 18" />
+        <path d="M247 560l-13 17" />
+        <path d="M186 640c14-6 26-16 34-30" />
+      </g>
+    </svg>
+    <div class="grain"></div>
   </div>
 
-  <!-- 第一幕：签约 -->
-  <section class="screen screen-gate" id="screen-gate">
-    <div class="gate-card">
+  <div class="toast-wrap" id="toast-wrap" aria-live="polite"></div>
+
+  <!-- ================= 第一幕：签订契约 ================= -->
+  <section class="screen" id="screen-1">
+    <div class="gate">
       <p class="eyebrow">第一幕 · 灵魂契约</p>
-      <h2 class="gate-title">在开始侧写之前<br />先留下你的名字</h2>
-      <p class="gate-desc">签定后会得到一串密钥，它是你唯一的凭证。</p>
+      <h1 class="display">在开始侧写之前<br />先留下你的名字</h1>
+      <p class="lede">签定后会得到一串密钥，它是你唯一的凭证。</p>
 
-      <div class="field">
-        <label for="nickname-input">昵称</label>
-        <input id="nickname-input" type="text" maxlength="24" placeholder="例：雪之下雪乃" autocomplete="off" />
-      </div>
-      <button id="btn-register" class="btn btn-primary" type="button">签定灵魂契约</button>
+      <label class="label" for="nickname-input">昵称</label>
+      <input id="nickname-input" class="input" type="text" maxlength="24" placeholder="例：雪之下雪乃" autocomplete="off" />
+      <button id="btn-register" class="btn btn-solid" type="button">签定灵魂契约</button>
 
-      <div class="key-out">
-        <span class="key-label">你的密钥</span>
+      <div class="key-slot">
+        <span class="key-slot__label">你的密钥</span>
         <code id="register-key">————</code>
       </div>
 
-      <div class="gate-divider"><span>已有密钥</span></div>
+      <div class="rule"><span>已有密钥</span></div>
 
-      <div class="field">
-        <label for="key-input">密钥</label>
-        <input id="key-input" type="text" placeholder="KEY-XXXX-XXXX" autocomplete="off" />
+      <label class="label" for="key-input">密钥</label>
+      <input id="key-input" class="input" type="text" placeholder="KEY-XXXX-XXXX" autocomplete="off" />
+      <button id="btn-login" class="btn btn-line" type="button">使用密钥登录</button>
+
+      <div class="gate__session" id="gate-session" hidden>
+        <span id="gate-session-text">已登录</span>
+        <button id="btn-logout-gate" class="btn btn-quiet btn-sm" type="button">注销</button>
       </div>
-      <button id="btn-login" class="btn btn-secondary" type="button">使用密钥登录</button>
-
-      <p class="session" id="session-status">未登录</p>
     </div>
   </section>
 
-  <!-- 第二幕：主界面 -->
-  <div class="screen screen-app" id="screen-app" hidden>
-    <header class="app-header">
-      <div class="app-header-main">
+  <!-- ================= 第二幕：侧写素材 ================= -->
+  <section class="screen" id="screen-2" hidden>
+    <header class="topbar">
+      <div>
         <p class="eyebrow">第二幕 · 侧写</p>
-        <h2 class="app-title">给一个角色，做一次心理侧写</h2>
+        <h2 class="headline">给一个角色，做一次心理侧写</h2>
       </div>
-      <p class="session session--app" id="session-status-app">未登录</p>
+      <div class="topbar__right">
+        <span class="who" id="who">未登录</span>
+        <button id="btn-logout" class="btn btn-quiet btn-sm" type="button">注销</button>
+        <button id="btn-open-match" class="btn btn-line btn-sm" type="button">合盘 →</button>
+      </div>
     </header>
 
-    <main class="app-main">
-      <!-- 主模块：侧写素材 -->
-      <section class="module module-primary">
-        <div class="module-head">
-          <p class="eyebrow">侧写素材</p>
-          <h3>上传角色文本，锁定主角</h3>
-        </div>
+    <main class="stage">
+      <section class="card card--main">
+        <p class="eyebrow">侧写素材</p>
+        <h3 class="card__title">上传角色文本，锁定主角</h3>
 
         <div class="form-grid">
-          <div class="field">
-            <label for="character-input">这次要侧写的角色名</label>
-            <input id="character-input" type="text" maxlength="32" placeholder="例：林晚" autocomplete="off" />
+          <div>
+            <label class="label" for="character-input">这次要侧写的角色名</label>
+            <input id="character-input" class="input" type="text" maxlength="32" placeholder="例：林晚" autocomplete="off" />
           </div>
-          <div class="field">
-            <label>角色文本（.txt）</label>
-            <label class="file-drop" for="file-input">
-              <span class="file-title">点击上传</span>
-              <span class="file-hint">≤ 30000 字符</span>
+          <div>
+            <span class="label">角色文本</span>
+            <label class="drop" id="drop" for="file-input">
+              <span class="drop__icon">＋</span>
+              <span class="drop__text">点击上传</span>
+              <span class="drop__hint">UTF-8 / GB18030 / UTF-16 · ≤ 3 万字</span>
             </label>
+            <input id="file-input" type="file" accept=".txt,text/plain" hidden />
           </div>
         </div>
 
-        <input id="file-input" type="file" accept=".txt,text/plain" hidden />
-        <p class="file-name" id="file-name">尚未选择文件</p>
-        <button id="btn-upload" class="btn btn-primary" type="button">开始侧写</button>
-        <p class="tips">按角色名锁定主人公，只评估 ta 本人的言行。测试阶段不扣额度。</p>
+        <button id="btn-upload" class="btn btn-solid" type="button">开始侧写</button>
+        <p class="hint">按角色名锁定主人公，只评估 ta 本人的言行。测试阶段不扣额度。</p>
       </section>
 
-      <!-- 次模块：合盘（权重明显更低） -->
-      <section class="module module-secondary" id="module-match">
-        <div class="module-head">
-          <p class="eyebrow">可选 · 合盘</p>
-          <h3>两份侧写都完成后解锁</h3>
+      <aside class="card card--side">
+        <p class="eyebrow">我的角色</p>
+        <h3 class="card__title">已侧写过的 OC</h3>
+        <div class="oc-list" id="oc-list">
+          <p class="empty">还没有侧写过角色</p>
         </div>
 
-        <div class="radar-stage">
-          <div class="radar-slot">
-            <p class="slot-title" id="slot-title-a">OC 1 · 待侧写</p>
-            <div id="radar-chart-a" class="radar-canvas"><span class="chart-empty">等待侧写</span></div>
-          </div>
-          <div class="radar-slot">
-            <p class="slot-title" id="slot-title-b">OC 2 · 待侧写</p>
-            <div id="radar-chart-b" class="radar-canvas"><span class="chart-empty">等待侧写</span></div>
-          </div>
+        <div class="rule"><span>角色码导入</span></div>
+        <div class="import-row">
+          <input id="oc-code-input" class="input" type="text" placeholder="OC-XXXX" autocomplete="off" />
+          <button id="btn-import" class="btn btn-line btn-sm" type="button">导入</button>
         </div>
-
-        <div class="match-bar">
-          <button id="btn-match" class="btn btn-secondary btn-sm" type="button" disabled>开始合盘</button>
-          <p class="match-hint" id="match-hint">上传两份角色文本后即可合盘</p>
-        </div>
-
-        <div class="derived" id="panel-derived" hidden>
-          <div id="derived-chart" class="radar-canvas radar-canvas--derived"></div>
-          <div class="match-entry">
-            <p class="entry-title" id="entry-title"></p>
-            <p class="entry-desc" id="entry-desc"></p>
-          </div>
-          <button id="btn-reset" class="btn btn-ghost btn-sm" type="button">重新合盘</button>
-        </div>
-      </section>
+      </aside>
     </main>
 
-    <footer class="app-footer">
-      <div class="footer-inner">
-        <div class="coupon-row">
-          <input id="coupon-input" type="text" placeholder="体验券码 VIP-XXXX" autocomplete="off" />
-          <button id="btn-redeem" class="btn btn-ghost btn-sm" type="button">兑换</button>
-        </div>
-        <button id="btn-feedback-open" class="btn btn-ghost btn-sm" type="button">提交反馈</button>
+    <footer class="footer-bar">
+      <div class="coupon-row">
+        <input id="coupon-input" class="input" type="text" placeholder="体验券码 VIP-XXXX" autocomplete="off" />
+        <button id="btn-redeem" class="btn btn-quiet btn-sm" type="button">兑换</button>
       </div>
+      <button id="btn-feedback-open" class="btn btn-quiet btn-sm" type="button">反馈有礼</button>
     </footer>
-  </div>
+  </section>
+
+  <!-- ================= 第三幕：角色页 ================= -->
+  <section class="screen" id="screen-3" hidden>
+    <header class="topbar topbar--oc">
+      <button id="btn-back-2" class="btn btn-quiet btn-sm" type="button">← 返回</button>
+      <button id="btn-oc-match" class="btn btn-line btn-sm" type="button">合盘 →</button>
+    </header>
+
+    <main class="oc-page">
+      <div class="oc-head">
+        <p class="eyebrow" id="oc-eyebrow">角色</p>
+        <h2 class="display display--sm" id="oc-name">—</h2>
+        <button id="oc-code" class="code-chip" type="button">OC-XXXX</button>
+      </div>
+
+      <div class="oc-body">
+        <div class="oc-chart" id="oc-chart"></div>
+
+        <div class="oc-text">
+          <div class="panel">
+            <p class="eyebrow">读者视角</p>
+            <p class="review" id="oc-review">—</p>
+          </div>
+          <div class="panel">
+            <p class="eyebrow">维度解读</p>
+            <ul class="dims" id="oc-dims"></ul>
+          </div>
+        </div>
+      </div>
+    </main>
+  </section>
+
+  <!-- ================= 第四幕：合盘 ================= -->
+  <section class="screen" id="screen-4" hidden>
+    <header class="topbar">
+      <div>
+        <p class="eyebrow">第四幕 · 合盘</p>
+        <h2 class="headline">两个人的十维，会拼出什么</h2>
+      </div>
+      <button id="btn-back-3" class="btn btn-quiet btn-sm" type="button">← 返回</button>
+    </header>
+
+    <main class="stage stage--match">
+      <div class="match-pick">
+        <div>
+          <label class="label" for="select-a">角色 A</label>
+          <select id="select-a" class="input"></select>
+        </div>
+        <div>
+          <label class="label" for="select-b">角色 B</label>
+          <select id="select-b" class="input"></select>
+        </div>
+        <button id="btn-match" class="btn btn-solid btn-sm" type="button">开始合盘</button>
+      </div>
+
+      <div class="radar-pair" id="radar-pair">
+        <div class="radar-box" id="radar-box-a">
+          <p class="radar-box__title" id="radar-title-a">A</p>
+          <div class="radar-box__canvas" id="radar-chart-a"></div>
+        </div>
+        <div class="radar-box" id="radar-box-b">
+          <p class="radar-box__title" id="radar-title-b">B</p>
+          <div class="radar-box__canvas" id="radar-chart-b"></div>
+        </div>
+      </div>
+
+      <div class="derived" id="panel-derived" hidden>
+        <div class="radar-box radar-box--wide">
+          <p class="radar-box__title">合盘维度</p>
+          <div class="radar-box__canvas" id="derived-chart"></div>
+        </div>
+        <div class="entry">
+          <p class="entry__title" id="entry-title"></p>
+          <p class="entry__body" id="entry-desc"></p>
+        </div>
+      </div>
+    </main>
+  </section>
 
   <!-- 反馈弹窗 -->
   <div class="modal" id="feedback-modal" hidden>
-    <div class="modal-backdrop" id="feedback-backdrop"></div>
-    <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="feedback-title">
-      <h3 class="modal-title" id="feedback-title">提交反馈 · 领取体验券</h3>
-      <p class="modal-tip">写下 20-200 字的真实感受或建议，通过后获得一张 VIP-XXXX 体验券。</p>
-
-      <textarea
-        id="feedback-text"
-        class="modal-textarea"
-        maxlength="200"
-        placeholder="例如：希望合盘结果能直接生成分享链接……"
-      ></textarea>
-
-      <div class="modal-meta">
+    <div class="modal__mask" id="feedback-mask"></div>
+    <div class="modal__card" role="dialog" aria-modal="true">
+      <h3 class="modal__title">提交反馈 · 领取体验券</h3>
+      <p class="modal__tip">20-200 字，说说使用感受或建议。</p>
+      <textarea id="feedback-text" class="textarea" maxlength="200" placeholder="例如：希望角色页能导出图片……"></textarea>
+      <div class="modal__meta">
         <span id="feedback-count">0 / 200</span>
-        <span class="modal-error" id="feedback-error"></span>
+        <span class="modal__err" id="feedback-error"></span>
       </div>
-
-      <div class="modal-actions">
-        <button class="btn btn-ghost btn-sm" id="btn-feedback-cancel" type="button">取消</button>
-        <button class="btn btn-primary btn-sm" id="btn-feedback-submit" type="button">提交并领取</button>
+      <div class="modal__actions">
+        <button id="btn-feedback-cancel" class="btn btn-quiet btn-sm" type="button">取消</button>
+        <button id="btn-feedback-submit" class="btn btn-solid btn-sm" type="button">提交</button>
       </div>
     </div>
   </div>
@@ -1721,6 +1798,25 @@ function feedback(key, text) {
 }
 
 /**
+ * 我的角色列表
+ * @param {string} key 灵魂契约密钥
+ * @returns {Promise<{ ocs: object[] }>}
+ */
+function myOcs(key) {
+  return request('/api/my-ocs', { method: 'POST', body: { key } });
+}
+
+/**
+ * 用角色码把别的账号的角色导入本账号
+ * @param {string} key 灵魂契约密钥
+ * @param {string} code 形如 OC-XXXX
+ * @returns {Promise<{ oc: object }>}
+ */
+function importOc(key, code) {
+  return request('/api/oc-import', { method: 'POST', body: { key, code } });
+}
+
+/**
  * 兑换体验券
  * @param {string} key 灵魂契约密钥
  * @param {string} coupon 形如 VIP-XXXX
@@ -1733,7 +1829,7 @@ function useCoupon(key, coupon) {
 
 /* ================= public/js/main.js ================= */
 // public/js/main.js
-// 页面交互：签定契约 / 登录 / 上传 TXT 侧写 / 双人合盘
+// 四幕流转：签约 → 素材 → 角色页 → 合盘
 
 
 
@@ -1741,126 +1837,102 @@ function useCoupon(key, coupon) {
 
 const STORAGE_KEY = 'oc_engine_key';
 const TEXT_LIMIT = 30000;
-const EXPLODE_MS = 520; // 与 style.css 的 transition 时长对齐
-const SLOT_COLORS = { a: '#e8e8f2', b: '#8ea2ff' };
+const OC_COLOR_A = '#e8e8f2';
+const OC_COLOR_B = '#8ea2ff';
 const DERIVED_ORDER = ['conflict', 'redemption', 'balance', 'resonance', 'painLink'];
 
-/* ---------------- 10 组合盘词条（按衍生维度归属） ---------------- */
+const $ = (id) => document.getElementById(id);
+const wait = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+
+/* ---------------- 10 组合盘词条 ---------------- */
 
 const MATCH_ENTRIES = {
-  // 冲突指数：双方自尊对撞
   conflict: [
-    {
-      title: '《深渊神明与灭世魔王》',
-      desc: '两个都不肯低头的人站在同一片废墟上，谁先开口谁就先认输；所以你们只好先把彼此按进灰烬里，再谈喜欢。',
-    },
-    {
-      title: '《双王座之上》',
-      desc: '王座只有一张，而你们都认为自己该坐。最终的和解方式是把世界关在门外，两个人挤在同一张椅子上互相撕咬。',
-    },
+    { title: '《深渊神明与灭世魔王》', desc: '两个都不肯低头的人站在同一片废墟上，谁先开口谁就先认输；所以你们只好先把彼此按进灰烬里，再谈喜欢。' },
+    { title: '《双王座之上》', desc: '王座只有一张，而你们都认为自己该坐。最终的和解方式是把世界关在门外，两个人挤在同一张椅子上互相撕咬。' },
   ],
-  // 救赎概率：一方的自毁被另一方的共情接住
   redemption: [
-    {
-      title: '《弑神者的最后一次宽恕》',
-      desc: '他本该毁掉一切，却在某个人读懂他之前迟疑了一秒。就这一秒，整座城市活了下来，他也活了下来。',
-    },
-    {
-      title: '《坠落天使的黎明》',
-      desc: '你向下坠时有人伸出手，掌心被你的碎骨划得鲜血淋漓也没有松开。从此黑夜第一次有了破晓的理由。',
-    },
+    { title: '《弑神者的最后一次宽恕》', desc: '他本该毁掉一切，却在某个人读懂他之前迟疑了一秒。就这一秒，整座城市活了下来，他也活了下来。' },
+    { title: '《坠落天使的黎明》', desc: '你向下坠时有人伸出手，掌心被你的碎骨划得鲜血淋漓也没有松开。从此黑夜第一次有了破晓的理由。' },
   ],
-  // 掌控平衡：支配欲高度对等
   balance: [
-    {
-      title: '《双生棋局》',
-      desc: '势均力敌的两个人互相试探、互相让步，谁也没赢，可谁也没输——这大概是宿命能给出的最好结局。',
-    },
-    {
-      title: '《天平两端》',
-      desc: '一人执刀，一人执秤。每一次靠近都要重新校准重量，而你们居然乐意把余生耗在这个动作上。',
-    },
+    { title: '《双生棋局》', desc: '势均力敌的两个人互相试探、互相让步，谁也没赢，可谁也没输——这大概是宿命能给出的最好结局。' },
+    { title: '《天平两端》', desc: '一人执刀，一人执秤。每一次靠近都要重新校准重量，而你们居然乐意把余生耗在这个动作上。' },
   ],
-  // 疯狂共振：破坏欲与偏执互相咬合
   resonance: [
-    {
-      title: '《疯狂共鸣曲》',
-      desc: '一个想毁掉世界，一个只想着他。两种疯狂拼在一起竟然严丝合缝，连旁观者都分不清谁在纵容谁。',
-    },
-    {
-      title: '《共犯者的夜曲》',
-      desc: '不需要理由的默契：你说要放火，我已经在找打火机。世界的规则在你们之间失效得毫无阻力。',
-    },
+    { title: '《疯狂共鸣曲》', desc: '一个想毁掉世界，一个只想着他。两种疯狂拼在一起竟然严丝合缝，连旁观者都分不清谁在纵容谁。' },
+    { title: '《共犯者的夜曲》', desc: '不需要理由的默契：你说要放火，我已经在找打火机。世界的规则在你们之间失效得毫无阻力。' },
   ],
-  // 痛觉链接：双方向痛苦索取的强度
   painLink: [
-    {
-      title: '《以痛为契》',
-      desc: '疼是你们之间唯一诚实的语言。谁先喊停，谁就先承认自己舍不得——而你们谁都不会先喊。',
-    },
-    {
-      title: '《伤痕契约》',
-      desc: '你身上的每一道旧伤他都能准确说出位置，那是比誓言更牢的契约：以血肉为印，以余生日日履行。',
-    },
+    { title: '《以痛为契》', desc: '疼是你们之间唯一诚实的语言。谁先喊停，谁就先承认自己舍不得——而你们谁都不会先喊。' },
+    { title: '《伤痕契约》', desc: '你身上的每一道旧伤他都能准确说出位置，那是比誓言更牢的契约：以血肉为印，以余生日日履行。' },
   ],
 };
 
-/* ---------------- DOM ---------------- */
-
-const nodes = {
-  nicknameInput: document.getElementById('nickname-input'),
-  registerBtn: document.getElementById('btn-register'),
-  registerKey: document.getElementById('register-key'),
-  keyInput: document.getElementById('key-input'),
-  loginBtn: document.getElementById('btn-login'),
-  session: document.getElementById('session-status'),
-  sessionApp: document.getElementById('session-status-app'),
-  gate: document.getElementById('screen-gate'),
-  app: document.getElementById('screen-app'),
-  characterInput: document.getElementById('character-input'),
-  fileInput: document.getElementById('file-input'),
-  fileName: document.getElementById('file-name'),
-  uploadBtn: document.getElementById('btn-upload'),
-  matchBtn: document.getElementById('btn-match'),
-  matchHint: document.getElementById('match-hint'),
-  resetBtn: document.getElementById('btn-reset'),
-  derivedPanel: document.getElementById('panel-derived'),
-  derivedChart: document.getElementById('derived-chart'),
-  entryTitle: document.getElementById('entry-title'),
-  entryDesc: document.getElementById('entry-desc'),
-  couponInput: document.getElementById('coupon-input'),
-  redeemBtn: document.getElementById('btn-redeem'),
-  feedbackOpenBtn: document.getElementById('btn-feedback-open'),
-  feedbackModal: document.getElementById('feedback-modal'),
-  feedbackBackdrop: document.getElementById('feedback-backdrop'),
-  feedbackText: document.getElementById('feedback-text'),
-  feedbackCount: document.getElementById('feedback-count'),
-  feedbackError: document.getElementById('feedback-error'),
-  feedbackSubmitBtn: document.getElementById('btn-feedback-submit'),
-  feedbackCancelBtn: document.getElementById('btn-feedback-cancel'),
-};
-
-const radarNodes = {
-  a: document.getElementById('radar-chart-a'),
-  b: document.getElementById('radar-chart-b'),
-};
-
-const slotTitleNodes = {
-  a: document.getElementById('slot-title-a'),
-  b: document.getElementById('slot-title-b'),
-};
+/* ---------------- 状态 ---------------- */
 
 const state = {
   key: '',
-  text: '',
-  fileName: '',
   user: null,
-  profiles: { a: null, b: null },
+  ocs: [],
+  activeOc: null,
+  fileText: '',
+  screen: 'screen-1',
 };
 
-/* ---------------- 工具 ---------------- */
+/* ---------------- 基础 UI ---------------- */
 
-const wait = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+let toastTimer = null;
+
+function toast(message, type = 'ok', ms = 3400) {
+  const wrap = $('toast-wrap');
+  if (!wrap) return;
+
+  const el = document.createElement('div');
+  el.className = `toast toast--${type}`;
+  el.textContent = message;
+  wrap.appendChild(el);
+
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => {
+    el.classList.add('is-out');
+    setTimeout(() => el.remove(), 320);
+  }, ms);
+}
+
+function go(id) {
+  const next = $(id);
+  if (!next || state.screen === id) return;
+
+  const prev = $(state.screen);
+  state.screen = id;
+
+  if (prev) prev.classList.add('is-out');
+
+  setTimeout(() => {
+    if (prev) {
+      prev.hidden = true;
+      prev.classList.remove('is-active', 'is-out');
+    }
+    next.hidden = false;
+    requestAnimationFrame(() => {
+      next.classList.add('is-active');
+      window.scrollTo(0, 0);
+    });
+  }, prev ? 280 : 0);
+}
+
+function setBusy(button, busy, busyText) {
+  if (busy) {
+    if (!button.dataset.idle) button.dataset.idle = button.textContent.trim();
+    button.textContent = busyText;
+    button.disabled = true;
+  } else {
+    button.textContent = button.dataset.idle || button.textContent.trim();
+    delete button.dataset.idle;
+    button.disabled = false;
+  }
+}
 
 function readStoredKey() {
   try {
@@ -1874,7 +1946,7 @@ function writeStoredKey(key) {
   try {
     localStorage.setItem(STORAGE_KEY, key);
   } catch {
-    /* 隐私模式禁用存储时忽略，会话内仍可用 */
+    /* ignore */
   }
 }
 
@@ -1886,448 +1958,553 @@ function clearStoredKey() {
   }
 }
 
-// 请求期间置灰，避免连点
-function setBusy(button, busy, busyText) {
-  if (busy) {
-    if (!button.dataset.idleLabel) button.dataset.idleLabel = button.textContent.trim();
-    button.textContent = busyText;
-    button.disabled = true;
-  } else {
-    button.textContent = button.dataset.idleLabel || button.textContent.trim();
-    delete button.dataset.idleLabel;
-    button.disabled = false;
-  }
-}
-
-function describeError(error) {
-  return (error && error.message) || String(error);
-}
-
-/* ---------------- 渲染 ---------------- */
-
-function renderSession() {
-  const user = state.user;
-  const text = user
-    ? `${user.nickname} · 余额 ${Number.isFinite(user.balance) ? user.balance : 0} 点`
-    : '未登录';
-
-  if (nodes.session) {
-    nodes.session.textContent = text;
-    nodes.session.classList.toggle('is-online', Boolean(user));
-  }
-  if (nodes.sessionApp) {
-    nodes.sessionApp.textContent = text;
-    nodes.sessionApp.classList.toggle('is-online', Boolean(user));
-  }
-}
-
-// 第一幕 -> 第二幕
-function showApp() {
-  if (!nodes.gate || !nodes.app || !nodes.app.hidden) return;
-  nodes.gate.classList.add('is-leaving');
-  window.setTimeout(() => {
-    nodes.gate.hidden = true;
-    nodes.gate.classList.remove('is-active', 'is-leaving');
-    nodes.app.hidden = false;
-    requestAnimationFrame(() => nodes.app.classList.add('is-active'));
-  }, 400);
-}
+/* ---------------- 会话 ---------------- */
 
 function applySession(data) {
   state.key = data.key;
   state.user = data.user;
+
   writeStoredKey(data.key);
-  nodes.registerKey.textContent = data.key;
-  nodes.keyInput.value = data.key;
-  renderSession();
-  showApp();
+  $('register-key').textContent = data.key;
+  $('key-input').value = data.key;
+  $('gate-session-text').textContent = `${data.user.nickname} · 已登录`;
+  $('gate-session').hidden = false;
+  $('who').textContent = `${data.user.nickname} · 余额 ${data.user.balance} 点`;
+
+  go('screen-2');
+  refreshOcs();
 }
 
-/* ---------------- 注册 / 登录 ---------------- */
+function logout() {
+  clearStoredKey();
+  state.key = '';
+  state.user = null;
+  state.ocs = [];
+  state.activeOc = null;
 
-nodes.registerBtn.addEventListener('click', async () => {
-  if (nodes.registerBtn.disabled) return;
+  $('who').textContent = '未登录';
+  $('gate-session').hidden = true;
+  $('key-input').value = '';
+  $('oc-list').innerHTML = '<p class="empty">还没有侧写过角色</p>';
 
-  const nickname = nodes.nicknameInput.value.trim();
-  if (!nickname) {
-    alert('请先输入昵称');
-    nodes.nicknameInput.focus();
+  toast('已注销，可以换一个账号了');
+  go('screen-1');
+}
+
+/* ---------------- 角色列表 ---------------- */
+
+function renderOcList() {
+  const list = $('oc-list');
+  list.innerHTML = '';
+
+  if (!state.ocs.length) {
+    list.innerHTML = '<p class="empty">还没有侧写过角色</p>';
     return;
   }
 
-  setBusy(nodes.registerBtn, true, '签发中…');
-  try {
-    const data = await auth(nickname);
-    applySession(data);
-    console.log('[auth]', data.user);
-    alert(`灵魂契约已签定。\n\n你的密钥：${data.key}\n\n请立即截图保存，这是唯一凭证，丢失无法找回。`);
-  } catch (error) {
-    alert(`签定失败：${describeError(error)}`);
-  } finally {
-    setBusy(nodes.registerBtn, false);
-  }
-});
-
-async function doLogin(key, { silent = false } = {}) {
-  setBusy(nodes.loginBtn, true, '验证中…');
-  try {
-    const data = await login(key);
-    applySession(data);
-    if (silent) console.log('[login] 自动登录成功', data.user);
-    return data;
-  } finally {
-    setBusy(nodes.loginBtn, false);
+  for (const oc of state.ocs) {
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'oc-item';
+    btn.innerHTML = `<span>${oc.name}</span><span class="oc-item__code">${oc.code}</span>`;
+    btn.addEventListener('click', () => openOc(oc));
+    list.appendChild(btn);
   }
 }
 
-nodes.loginBtn.addEventListener('click', async () => {
-  if (nodes.loginBtn.disabled) return;
+async function refreshOcs() {
+  if (!state.key) return;
+  try {
+    const data = await myOcs(state.key);
+    state.ocs = data.ocs || [];
+    renderOcList();
+    fillSelects();
+  } catch (error) {
+    toast(error.message, 'err');
+  }
+}
 
-  const key = nodes.keyInput.value.trim();
-  if (!key) {
-    alert('请输入密钥');
-    nodes.keyInput.focus();
-    return;
+/* ---------------- 第三幕：角色页 ---------------- */
+
+function openOc(oc) {
+  state.activeOc = oc;
+
+  $('oc-eyebrow').textContent = oc.createdAt
+    ? `角色 · ${new Date(oc.createdAt).toLocaleDateString('zh-CN')}`
+    : '角色';
+  $('oc-name').textContent = oc.name;
+  $('oc-code').textContent = oc.code;
+  $('oc-review').textContent = oc.review || '这个角色还没有留下评价。';
+
+  const list = $('oc-dims');
+  list.innerHTML = '';
+  for (const [key, label] of Object.entries(DIMENSION_LABELS)) {
+    const comment = (oc.dimensions && oc.dimensions[key]) || '—';
+    const li = document.createElement('li');
+    const strong = document.createElement('b');
+    strong.textContent = label;
+    const span = document.createElement('span');
+    span.textContent = comment;
+    li.append(strong, span);
+    list.appendChild(li);
+  }
+
+  go('screen-3');
+  // 等换幕过渡结束、容器有尺寸后再画
+  setTimeout(() => {
+    renderOCRadar($('oc-chart'), { name: oc.name, scores: oc.scores }, OC_COLOR_A);
+  }, 360);
+}
+
+/* ---------------- 文件读取（多编码） ---------------- */
+
+function decodeBuffer(buffer) {
+  const bytes = new Uint8Array(buffer);
+
+  if (bytes[0] === 0xef && bytes[1] === 0xbb && bytes[2] === 0xbf) {
+    return new TextDecoder('utf-8').decode(bytes.subarray(3));
+  }
+  if (bytes[0] === 0xff && bytes[1] === 0xfe) {
+    return new TextDecoder('utf-16le').decode(bytes.subarray(2));
+  }
+  if (bytes[0] === 0xfe && bytes[1] === 0xff) {
+    return new TextDecoder('utf-16be').decode(bytes.subarray(2));
   }
 
   try {
-    const data = await doLogin(key);
-    console.log('[login]', data.user);
-  } catch (error) {
-    alert(`登录失败：${describeError(error)}`);
+    return new TextDecoder('utf-8', { fatal: true }).decode(bytes);
+  } catch {
+    try {
+      return new TextDecoder('gb18030').decode(bytes);
+    } catch {
+      return new TextDecoder('utf-8').decode(bytes);
+    }
   }
-});
+}
 
-/* ---------------- 上传 TXT ---------------- */
-
-nodes.fileInput.addEventListener('change', () => {
-  const file = nodes.fileInput.files && nodes.fileInput.files[0];
+$('file-input').addEventListener('change', async () => {
+  const file = $('file-input').files && $('file-input').files[0];
   if (!file) return;
 
-  state.text = '';
-  state.fileName = '';
-  nodes.fileName.textContent = '读取中…';
+  const drop = $('drop');
+  drop.classList.remove('is-loaded');
+  drop.querySelector('.drop__text').textContent = '读取中…';
 
   if (!/\.txt$/i.test(file.name)) {
-    nodes.fileName.textContent = '仅支持 .txt 文本文件';
-    alert('仅支持 .txt 文本文件');
-    nodes.fileInput.value = '';
+    drop.querySelector('.drop__text').textContent = '仅支持 .txt';
+    toast('只支持 .txt 文本文件', 'err');
+    $('file-input').value = '';
     return;
   }
 
-  const reader = new FileReader();
-
-  reader.onload = () => {
-    const text = typeof reader.result === 'string' ? reader.result : '';
+  try {
+    const buffer = await file.arrayBuffer();
+    const text = decodeBuffer(buffer);
 
     if (!text.trim()) {
-      nodes.fileName.textContent = '文件内容为空';
-      alert('文件内容为空，请重新选择');
-      nodes.fileInput.value = '';
+      drop.querySelector('.drop__text').textContent = '文件是空的';
+      toast('这个文件里没有内容', 'err');
       return;
     }
-
     if (text.length > TEXT_LIMIT) {
-      nodes.fileName.textContent = `文本 ${text.length} 字符，超过上限 ${TEXT_LIMIT}`;
-      alert(`文本长度 ${text.length} 字符，超过上限 ${TEXT_LIMIT} 字符`);
-      nodes.fileInput.value = '';
+      drop.querySelector('.drop__text').textContent = '太长了';
+      toast(`文本 ${text.length} 字，超过 ${TEXT_LIMIT} 上限`, 'err');
       return;
     }
 
-    // 非 UTF-8 的 TXT 会被读成乱码，模型接到乱码就会返回空内容
-    const broken = (text.match(/\uFFFD/g) || []).length;
-    if (broken > text.length * 0.02) {
-      nodes.fileName.textContent = '文件编码异常，疑似非 UTF-8';
-      alert('这个 TXT 不是 UTF-8 编码（读出来是乱码）。\n用记事本打开 → 文件 → 另存为 → 编码选 UTF-8 → 再上传。');
-      nodes.fileInput.value = '';
-      return;
-    }
-
-    state.text = text;
-    state.fileName = file.name;
-    nodes.fileName.textContent = `${file.name} · ${text.length} 字符`;
-  };
-
-  reader.onerror = () => {
-    nodes.fileName.textContent = '文件读取失败';
-    alert('文件读取失败，请重试');
-  };
-
-  reader.readAsText(file, 'utf-8');
-});
-
-/* ================= 合盘：槽位 / 动画 / 词条 ================= */
-
-function nextSlotKey() {
-  if (!state.profiles.a) return 'a';
-  if (!state.profiles.b) return 'b';
-  return 'a'; // 两份都满时，新的侧写覆盖 A
-}
-
-function updateMatchAvailability() {
-  const ready = Boolean(state.profiles.a && state.profiles.b);
-  nodes.matchBtn.disabled = !ready;
-  nodes.matchHint.textContent = ready ? '两份侧写已就位，点击开始合盘' : '上传两份 OC 文本后即可合盘';
-}
-
-// 把某份侧写画进指定槽位
-function setSlotProfile(slotKey, profile) {
-  state.profiles[slotKey] = profile;
-  renderOCRadar(radarNodes[slotKey], profile, SLOT_COLORS[slotKey]);
-  const title = slotTitleNodes[slotKey];
-  if (title) title.textContent = `OC ${slotKey.toUpperCase()} · ${profile.name}`;
-  updateMatchAvailability();
-}
-
-// 撤销爆炸动画、恢复两个单人雷达面板
-function resetMatchView() {
-  for (const key of ['a', 'b']) {
-    const el = radarNodes[key];
-    if (!el) continue;
-    el.classList.remove('explode-anim');
-    el.style.removeProperty('display');
-    el.style.removeProperty('opacity');
-    el.style.removeProperty('transform');
+    state.fileText = text;
+    drop.classList.add('is-loaded');
+    drop.querySelector('.drop__icon').textContent = '✓';
+    drop.querySelector('.drop__text').textContent = `已载入 · ${text.length} 字`;
+    drop.querySelector('.drop__hint').textContent = file.name;
+    toast(`文本载入成功：${file.name}`, 'ok', 2200);
+  } catch (error) {
+    drop.querySelector('.drop__text').textContent = '读取失败';
+    toast(`读取失败：${error.message}`, 'err');
   }
-  nodes.derivedPanel.hidden = true;
-  nodes.matchBtn.textContent = '开始合盘';
-  updateMatchAvailability();
-}
-
-// 按最高的衍生维度挑选词条，次高维度决定取同组里的哪一种语气
-function pickEntry(derived) {
-  const ranked = [...DERIVED_ORDER].sort((x, y) => (derived[y] || 0) - (derived[x] || 0));
-  const topKey = ranked[0];
-  const pool = MATCH_ENTRIES[topKey] || MATCH_ENTRIES.conflict;
-  const secondary = derived[ranked[1]] || 0;
-  return { key: topKey, entry: pool[secondary >= 60 ? 1 : 0] || pool[0] };
-}
-
-async function runMatch() {
-  const a = state.profiles.a;
-  const b = state.profiles.b;
-  if (!a || !b) {
-    alert('需要两份 OC 侧写才能合盘');
-    return;
-  }
-  if (nodes.matchBtn.disabled) return;
-
-  nodes.matchBtn.disabled = true;
-  nodes.matchBtn.textContent = '合盘中…';
-
-  // 1. 两张单人雷达放大淡出
-  radarNodes.a.classList.add('explode-anim');
-  radarNodes.b.classList.add('explode-anim');
-
-  await wait(EXPLODE_MS);
-
-  // 2. 动画结束后隐藏
-  radarNodes.a.style.display = 'none';
-  radarNodes.b.style.display = 'none';
-
-  // 3. 计算 5 个衍生维度并展示第三张合盘雷达
-  const derived = computeDerived(a.scores, b.scores);
-  nodes.derivedPanel.hidden = false;
-  const chart = renderDerivedRadar(nodes.derivedChart, derived);
-  requestAnimationFrame(() => chart && chart.resize());
-
-  // 4. 匹配词条
-  const { entry } = pickEntry(derived);
-  nodes.entryTitle.textContent = entry.title;
-  nodes.entryDesc.textContent = entry.desc;
-
-  nodes.matchBtn.textContent = '已合盘';
-  nodes.matchBtn.disabled = true;
-  nodes.derivedPanel.scrollIntoView({ behavior: 'smooth', block: 'start' });
-}
-
-nodes.matchBtn.addEventListener('click', () => {
-  runMatch().catch((error) => {
-    alert(`合盘失败：${describeError(error)}`);
-    resetMatchView();
-  });
 });
 
-nodes.resetBtn.addEventListener('click', () => {
-  resetMatchView();
-  if (state.profiles.a) renderOCRadar(radarNodes.a, state.profiles.a, SLOT_COLORS.a);
-  if (state.profiles.b) renderOCRadar(radarNodes.b, state.profiles.b, SLOT_COLORS.b);
-});
+/* ---------------- 第二幕：侧写 ---------------- */
 
-/* ---------------- 侧写 ---------------- */
-
-nodes.uploadBtn.addEventListener('click', async () => {
-  if (nodes.uploadBtn.disabled) return;
+$('btn-upload').addEventListener('click', async () => {
+  const button = $('btn-upload');
+  if (button.disabled) return;
 
   if (!state.key) {
-    alert('请先签定灵魂契约或使用密钥登录');
-    return;
-  }
-  if (!state.text) {
-    alert('请先上传角色 TXT 文件');
+    toast('请先在第二幕登录', 'err');
+    go('screen-1');
     return;
   }
 
-  const characterName = nodes.characterInput.value.trim();
-  if (!characterName) {
-    alert('请先填写这次要侧写的角色名');
-    nodes.characterInput.focus();
+  const name = $('character-input').value.trim();
+  if (!name) {
+    toast('先填这次要侧写的角色名', 'err');
+    $('character-input').focus();
+    return;
+  }
+  if (!state.fileText) {
+    toast('先上传角色 txt', 'err');
     return;
   }
 
-  setBusy(nodes.uploadBtn, true, '侧写中，请稍候…');
+  setBusy(button, true, '侧写中…');
   try {
-    const data = await parseText(state.key, state.text, characterName);
-    console.log('[parse] 侧写结果', data);
-    console.log('[parse] 10 维评分', data.scores);
+    const data = await parseText(state.key, state.fileText, name);
+    const oc = data.profile;
 
     if (state.user && Number.isFinite(data.balance)) {
       state.user.balance = data.balance;
-      renderSession();
+      $('who').textContent = `${state.user.nickname} · 余额 ${data.balance} 点`;
     }
 
-    // 侧写成功：恢复合盘视图，把结果放进下一个空槽
-    resetMatchView();
-    const slotKey = nextSlotKey();
-    const profileName = characterName || (state.fileName || '未知 OC').replace(/\.txt$/i, '');
-    setSlotProfile(slotKey, { name: profileName, scores: data.scores });
+    state.ocs = [oc, ...state.ocs.filter((item) => item.code !== oc.code)];
+    renderOcList();
+    fillSelects();
 
-    alert(
-      `侧写完成\n模型：${data.model}\n字符：${data.charCount}\n消耗：${data.cost} 点\n余额：${data.balance} 点\n\n已填入 OC ${slotKey.toUpperCase()} 雷达，详细评分见控制台`
-    );
+    toast(`「${oc.name}」侧写完成`);
+    openOc(oc);
   } catch (error) {
-    alert(`侧写失败：${describeError(error)}`);
+    toast(error.message, 'err', 4200);
   } finally {
-    setBusy(nodes.uploadBtn, false);
+    setBusy(button, false);
   }
 });
 
-/* ================= 反馈领券 / 券码兑换 ================= */
+/* ---------------- 角色码 ---------------- */
+
+$('btn-import').addEventListener('click', async () => {
+  const code = $('oc-code-input').value.trim();
+  if (!code) {
+    toast('先填角色码', 'err');
+    return;
+  }
+  if (!state.key) {
+    toast('请先登录', 'err');
+    return;
+  }
+
+  const button = $('btn-import');
+  setBusy(button, true, '导入中');
+  try {
+    const data = await importOc(state.key, code);
+    state.ocs = [data.oc, ...state.ocs.filter((item) => item.code !== data.oc.code)];
+    renderOcList();
+    fillSelects();
+    $('oc-code-input').value = '';
+    toast(`已导入「${data.oc.name}」`);
+    openOc(data.oc);
+  } catch (error) {
+    toast(error.message, 'err');
+  } finally {
+    setBusy(button, false);
+  }
+});
+
+$('oc-code').addEventListener('click', async () => {
+  const code = $('oc-code').textContent.trim();
+  try {
+    await navigator.clipboard.writeText(code);
+    toast(`已复制 ${code}`);
+  } catch {
+    toast(`角色码：${code}`, 'ok', 5000);
+  }
+});
+
+/* ---------------- 第四幕：合盘 ---------------- */
+
+function fillSelects() {
+  for (const id of ['select-a', 'select-b']) {
+    const select = $(id);
+    const current = select.value;
+    select.innerHTML = '';
+
+    if (!state.ocs.length) {
+      const option = document.createElement('option');
+      option.value = '';
+      option.textContent = '还没有可用的角色';
+      select.appendChild(option);
+      continue;
+    }
+
+    for (const oc of state.ocs) {
+      const option = document.createElement('option');
+      option.value = oc.code;
+      option.textContent = `${oc.name}（${oc.code}）`;
+      select.appendChild(option);
+    }
+
+    if (current && state.ocs.some((oc) => oc.code === current)) select.value = current;
+  }
+
+  if (state.ocs.length >= 2 && $('select-a').value === $('select-b').value) {
+    $('select-b').value = state.ocs[1].code;
+  }
+  if (state.activeOc && state.ocs.some((oc) => oc.code === state.activeOc.code)) {
+    $('select-a').value = state.activeOc.code;
+  }
+}
+
+function findOc(code) {
+  return state.ocs.find((oc) => oc.code === code) || null;
+}
+
+function pickEntry(derived) {
+  const ranked = [...DERIVED_ORDER].sort((x, y) => (derived[y] || 0) - (derived[x] || 0));
+  const pool = MATCH_ENTRIES[ranked[0]] || MATCH_ENTRIES.conflict;
+  const secondary = derived[ranked[1]] || 0;
+  return pool[secondary >= 60 ? 1 : 0] || pool[0];
+}
+
+let matching = false;
+
+$('btn-match').addEventListener('click', async () => {
+  if (matching) return;
+
+  const a = findOc($('select-a').value);
+  const b = findOc($('select-b').value);
+
+  if (!a || !b) {
+    toast('需要两个角色才能合盘', 'err');
+    return;
+  }
+  if (a.code === b.code) {
+    toast('换一个不同的角色再试', 'err');
+    return;
+  }
+
+  matching = true;
+  const button = $('btn-match');
+  setBusy(button, true, '合盘中…');
+
+  try {
+    $('panel-derived').hidden = true;
+    $('radar-pair').hidden = false;
+    $('radar-chart-a').style.display = '';
+    $('radar-chart-b').style.display = '';
+
+    $('radar-title-a').textContent = `${a.name} · ${a.code}`;
+    $('radar-title-b').textContent = `${b.name} · ${b.code}`;
+
+    renderOCRadar($('radar-chart-a'), { name: a.name, scores: a.scores }, OC_COLOR_A);
+    renderOCRadar($('radar-chart-b'), { name: b.name, scores: b.scores }, OC_COLOR_B);
+
+    await wait(650);
+
+    $('radar-box-a').classList.add('explode-anim');
+    $('radar-box-b').classList.add('explode-anim');
+
+    await wait(520);
+
+    $('radar-pair').hidden = true;
+    $('radar-box-a').classList.remove('explode-anim');
+    $('radar-box-b').classList.remove('explode-anim');
+
+    const derived = computeDerived(a.scores, b.scores);
+    $('panel-derived').hidden = false;
+
+    const chart = renderDerivedRadar($('derived-chart'), derived);
+    requestAnimationFrame(() => chart && chart.resize());
+
+    const entry = pickEntry(derived);
+    $('entry-title').textContent = entry.title;
+    $('entry-desc').textContent = entry.desc;
+
+    toast('合盘完成');
+  } catch (error) {
+    toast(error.message, 'err');
+  } finally {
+    matching = false;
+    setBusy(button, false);
+  }
+});
+
+/* ---------------- 导航 ---------------- */
+
+$('btn-open-match').addEventListener('click', () => {
+  if (state.ocs.length < 2) {
+    toast('至少先侧写两个角色', 'err');
+    return;
+  }
+  fillSelects();
+  go('screen-4');
+});
+
+$('btn-oc-match').addEventListener('click', () => {
+  if (state.ocs.length < 2) {
+    toast('至少先侧写两个角色，再回来合盘', 'err');
+    return;
+  }
+  fillSelects();
+  go('screen-4');
+});
+
+$('btn-back-2').addEventListener('click', () => go('screen-2'));
+$('btn-back-3').addEventListener('click', () => {
+  if (state.activeOc) openOc(state.activeOc);
+  else go('screen-2');
+});
+
+/* ---------------- 注册 / 登录 / 注销 ---------------- */
+
+$('btn-register').addEventListener('click', async () => {
+  const button = $('btn-register');
+  if (button.disabled) return;
+
+  const nickname = $('nickname-input').value.trim();
+  if (!nickname) {
+    toast('先输入昵称', 'err');
+    $('nickname-input').focus();
+    return;
+  }
+
+  setBusy(button, true, '签发中…');
+  try {
+    const data = await auth(nickname);
+    applySession(data);
+    toast(`契约已签定 · ${data.key}`, 'ok', 6000);
+  } catch (error) {
+    toast(error.message, 'err');
+  } finally {
+    setBusy(button, false);
+  }
+});
+
+$('btn-login').addEventListener('click', async () => {
+  const button = $('btn-login');
+  if (button.disabled) return;
+
+  const key = $('key-input').value.trim();
+  if (!key) {
+    toast('先输入密钥', 'err');
+    $('key-input').focus();
+    return;
+  }
+
+  setBusy(button, true, '验证中…');
+  try {
+    const data = await login(key);
+    applySession(data);
+    toast(`欢迎回来，${data.user.nickname}`);
+  } catch (error) {
+    toast(error.message, 'err');
+  } finally {
+    setBusy(button, false);
+  }
+});
+
+$('btn-logout').addEventListener('click', logout);
+$('btn-logout-gate').addEventListener('click', logout);
+
+/* ---------------- 券码 / 反馈 ---------------- */
 
 const FEEDBACK_MIN = 20;
 const FEEDBACK_MAX = 200;
 
-function feedbackLength() {
-  return [...nodes.feedbackText.value.trim()].length;
-}
-
-function syncFeedbackCount() {
-  nodes.feedbackCount.textContent = `${feedbackLength()} / ${FEEDBACK_MAX}`;
-}
-
-function openFeedback() {
+$('btn-redeem').addEventListener('click', async () => {
   if (!state.key) {
-    alert('请先签定灵魂契约或使用密钥登录');
-    return;
-  }
-  nodes.feedbackError.textContent = '';
-  nodes.feedbackText.value = '';
-  nodes.feedbackModal.hidden = false;
-  syncFeedbackCount();
-  setTimeout(() => nodes.feedbackText.focus(), 30);
-}
-
-function closeFeedback() {
-  nodes.feedbackModal.hidden = true;
-}
-
-nodes.feedbackText.addEventListener('input', () => {
-  nodes.feedbackError.textContent = '';
-  syncFeedbackCount();
-});
-
-nodes.feedbackOpenBtn.addEventListener('click', openFeedback);
-nodes.feedbackCancelBtn.addEventListener('click', closeFeedback);
-nodes.feedbackBackdrop.addEventListener('click', closeFeedback);
-
-document.addEventListener('keydown', (event) => {
-  if (event.key === 'Escape' && !nodes.feedbackModal.hidden) closeFeedback();
-});
-
-nodes.feedbackSubmitBtn.addEventListener('click', async () => {
-  if (nodes.feedbackSubmitBtn.disabled) return;
-  if (!state.key) {
-    alert('请先签定灵魂契约或使用密钥登录');
+    toast('请先登录', 'err');
     return;
   }
 
-  const text = nodes.feedbackText.value.trim();
-  const length = [...text].length;
-  if (length < FEEDBACK_MIN || length > FEEDBACK_MAX) {
-    nodes.feedbackError.textContent = `需 ${FEEDBACK_MIN}-${FEEDBACK_MAX} 字，当前 ${length} 字`;
-    nodes.feedbackText.focus();
-    return;
-  }
-
-  setBusy(nodes.feedbackSubmitBtn, true, '提交中…');
-  try {
-    const data = await feedback(state.key, text);
-    closeFeedback();
-    nodes.couponInput.value = data.coupon;
-    alert(
-      `反馈已收到，感谢！\n\n你的体验券：${data.coupon}\n\n券码已填入兑换框，点击兑换即可 +${data.reward} 虚拟币。`
-    );
-  } catch (error) {
-    const message = describeError(error);
-    nodes.feedbackError.textContent = message;
-    alert(`提交失败：${message}`);
-  } finally {
-    setBusy(nodes.feedbackSubmitBtn, false);
-  }
-});
-
-nodes.redeemBtn.addEventListener('click', async () => {
-  if (nodes.redeemBtn.disabled) return;
-  if (!state.key) {
-    alert('请先签定灵魂契约或使用密钥登录');
-    return;
-  }
-
-  const coupon = nodes.couponInput.value.trim();
+  const coupon = $('coupon-input').value.trim();
   if (!coupon) {
-    alert('请输入券码');
-    nodes.couponInput.focus();
+    toast('先填券码', 'err');
     return;
   }
 
-  setBusy(nodes.redeemBtn, true, '兑换中…');
+  const button = $('btn-redeem');
+  setBusy(button, true, '兑换中');
   try {
     const data = await useCoupon(state.key, coupon);
     if (state.user) {
       state.user.balance = data.balance;
-      renderSession();
+      $('who').textContent = `${state.user.nickname} · 余额 ${data.balance} 点`;
     }
-    nodes.couponInput.value = '';
-    alert(`兑换成功\n奖励：+${data.reward} 虚拟币\n当前余额：${data.balance} 点`);
+    $('coupon-input').value = '';
+    toast(`兑换成功 +${data.reward}，余额 ${data.balance} 点`);
   } catch (error) {
-    alert(`兑换失败：${describeError(error)}`);
+    toast(error.message, 'err');
   } finally {
-    setBusy(nodes.redeemBtn, false);
+    setBusy(button, false);
   }
 });
 
-/* ---------------- 启动：自动登录 ---------------- */
+$('btn-feedback-open').addEventListener('click', () => {
+  if (!state.key) {
+    toast('请先登录', 'err');
+    return;
+  }
+  $('feedback-error').textContent = '';
+  $('feedback-text').value = '';
+  $('feedback-count').textContent = `0 / ${FEEDBACK_MAX}`;
+  $('feedback-modal').hidden = false;
+  setTimeout(() => $('feedback-text').focus(), 30);
+});
 
-(async function boot() {
-  // 第一幕淡入
-  if (nodes.gate) {
-    nodes.gate.classList.add('is-active');
-    if (readStoredKey()) nodes.gate.classList.add('is-fast');
+$('feedback-text').addEventListener('input', () => {
+  const length = [...$('feedback-text').value.trim()].length;
+  $('feedback-count').textContent = `${length} / ${FEEDBACK_MAX}`;
+  $('feedback-error').textContent = '';
+});
+
+$('btn-feedback-cancel').addEventListener('click', () => {
+  $('feedback-modal').hidden = true;
+});
+
+$('feedback-mask').addEventListener('click', () => {
+  $('feedback-modal').hidden = true;
+});
+
+$('btn-feedback-submit').addEventListener('click', async () => {
+  const button = $('btn-feedback-submit');
+  if (button.disabled) return;
+
+  const text = $('feedback-text').value.trim();
+  const length = [...text].length;
+  if (length < FEEDBACK_MIN || length > FEEDBACK_MAX) {
+    $('feedback-error').textContent = `需 ${FEEDBACK_MIN}-${FEEDBACK_MAX} 字，当前 ${length} 字`;
+    return;
   }
 
-  const stored = readStoredKey();
-  if (!stored) return;
-
-  nodes.keyInput.value = stored;
+  setBusy(button, true, '提交中');
   try {
-    await doLogin(stored, { silent: true });
+    const data = await feedback(state.key, text);
+    $('feedback-modal').hidden = true;
+    $('coupon-input').value = data.coupon;
+    toast(`感谢反馈！体验券：${data.coupon}`, 'ok', 7000);
   } catch (error) {
-    clearStoredKey();
-    state.key = '';
-    state.user = null;
-    nodes.keyInput.value = '';
-    renderSession();
-    alert(`自动登录失败：${describeError(error)}\n本地密钥已清除，请重新签定或手动输入密钥。`);
+    $('feedback-error').textContent = error.message;
+  } finally {
+    setBusy(button, false);
+  }
+});
+
+/* ---------------- 背景视差 ---------------- */
+
+const backdrop = $('backdrop');
+if (backdrop && window.matchMedia('(hover: hover)').matches) {
+  window.addEventListener(
+    'mousemove',
+    (event) => {
+      const dx = (event.clientX / window.innerWidth - 0.5) * 10;
+      const dy = (event.clientY / window.innerHeight - 0.5) * 8;
+      backdrop.style.transform = `translate3d(${dx}px, ${dy}px, 0)`;
+    },
+    { passive: true }
+  );
+}
+
+/* ---------------- 启动 ---------------- */
+
+(function boot() {
+  const first = $('screen-1');
+  first.hidden = false;
+  requestAnimationFrame(() => first.classList.add('is-active'));
+
+  const stored = readStoredKey();
+  if (stored) {
+    $('key-input').value = stored;
+    toast('检测到上次的密钥，点「使用密钥登录」继续', 'ok', 5000);
   }
 })();
 
