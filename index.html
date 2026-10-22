@@ -2136,7 +2136,7 @@ function clearStoredKey() {
 
 /* ---------------- 上传区复位 ---------------- */
 
-function disposeChart(id) {
+function disposeChartById(id) {
   const el = $(id);
   if (!el) return;
   if (typeof echarts !== 'undefined') {
@@ -2157,9 +2157,9 @@ function resetMatchView() {
   $('entry-title').textContent = '';
   $('entry-desc').textContent = '';
 
-  disposeChart('radar-chart-a');
-  disposeChart('radar-chart-b');
-  disposeChart('derived-chart');
+  disposeChartById('radar-chart-a');
+  disposeChartById('radar-chart-b');
+  disposeChartById('derived-chart');
 }
 
 /* ---------------- 上传区复位 ---------------- */
