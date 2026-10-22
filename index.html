@@ -435,6 +435,42 @@ select.input {
   100% { transform: scale(1); }
 }
 
+/* Tabs */
+.tabs {
+  display: inline-flex;
+  gap: 4px;
+  padding: 4px;
+  margin-bottom: 14px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: rgba(0, 0, 0, 0.35);
+}
+
+.tab {
+  padding: 9px 18px;
+  border: none;
+  border-radius: 9px;
+  background: transparent;
+  color: var(--muted);
+  font-family: inherit;
+  font-size: 12.5px;
+  letter-spacing: 0.06em;
+  cursor: pointer;
+  transition: background 0.2s, color 0.2s;
+}
+
+.tab:hover { color: var(--text); }
+
+.tab.is-on {
+  background: rgba(154, 171, 255, 0.16);
+  color: var(--text);
+  box-shadow: inset 0 0 0 1px rgba(154, 171, 255, 0.28);
+}
+
+.tab-panel { animation: pop 0.25s var(--ease); }
+
+#text-input { min-height: 190px; font-size: 13px; }
+
 .hint { margin: 14px 0 0; font-size: 11px; line-height: 1.85; color: var(--muted-2); }
 
 /* 角色列表 */
@@ -841,14 +877,28 @@ select.input {
             <input id="character-input" class="input" type="text" maxlength="32" placeholder="例：林晚" autocomplete="off" />
           </div>
           <div>
-            <span class="label">角色文本</span>
-            <label class="drop" id="drop" for="file-input">
-              <span class="drop__icon">＋</span>
-              <span class="drop__text">点击上传</span>
-              <span class="drop__hint">UTF-8 / GB18030 / UTF-16 · ≤ 3 万字</span>
-            </label>
-            <input id="file-input" type="file" accept=".txt,text/plain" hidden />
+            <label class="label" for="mbti-select">MBTI（可选，用来锚定人格）</label>
+            <select id="mbti-select" class="input"></select>
           </div>
+        </div>
+
+        <div class="tabs" role="tablist">
+          <button class="tab is-on" type="button" data-tab="file" role="tab">上传 TXT 文件</button>
+          <button class="tab" type="button" data-tab="text" role="tab">直接输入文本</button>
+        </div>
+
+        <div class="tab-panel" data-panel="file">
+          <label class="drop" id="drop" for="file-input">
+            <span class="drop__icon">＋</span>
+            <span class="drop__text">点击上传</span>
+            <span class="drop__hint">UTF-8 / GB18030 / UTF-16 · ≤ 3 万字</span>
+          </label>
+          <input id="file-input" type="file" accept=".txt,text/plain" hidden />
+        </div>
+
+        <div class="tab-panel" data-panel="text" hidden>
+          <textarea id="text-input" class="textarea" maxlength="30000" placeholder="把角色设定、台词、剧情片段直接打进来或粘进来……"></textarea>
+          <p class="hint"><span id="text-count">0</span> / 30000 字</p>
         </div>
 
         <button id="btn-upload" class="btn btn-solid" type="button">开始侧写</button>
@@ -2008,10 +2058,10 @@ function login(key) {
  * @param {string} text 角色文本
  * @returns {Promise<{ scores: object, cost: number, balance: number, model: string }>}
  */
-function parseText(key, text, name) {
+function parseText(key, text, name, mbti) {
   return request('/api/parse', {
     method: 'POST',
-    body: { key, text, name },
+    body: { key, text, name, mbti: mbti || '' },
     timeout: 180000, // reasoner 推理可能较慢
   });
 }
@@ -2124,8 +2174,49 @@ const state = {
   activeOc: null,
   matchA: null,
   fileText: '',
+  mode: 'file',
   screen: 'screen-1',
 };
+
+/* ---------------- MBTI ---------------- */
+
+const MBTI_LIST = [
+  '',
+  'INTJ', 'INTP', 'ENTJ', 'ENTP',
+  'INFJ', 'INFP', 'ENFJ', 'ENFP',
+  'ISTJ', 'ISFJ', 'ESTJ', 'ESFJ',
+  'ISTP', 'ISFP', 'ESTP', 'ESFP',
+];
+
+(function fillMbti() {
+  const select = $('mbti-select');
+  if (!select) return;
+  for (const type of MBTI_LIST) {
+    const option = document.createElement('option');
+    option.value = type;
+    option.textContent = type || '未知 / 不填';
+    select.appendChild(option);
+  }
+})();
+
+/* ---------------- 文本来源 Tabs ---------------- */
+
+document.querySelectorAll('.tab').forEach((tab) => {
+  tab.addEventListener('click', () => {
+    state.mode = tab.dataset.tab === 'text' ? 'text' : 'file';
+
+    document.querySelectorAll('.tab').forEach((item) => {
+      item.classList.toggle('is-on', item === tab);
+    });
+    document.querySelectorAll('.tab-panel').forEach((panel) => {
+      panel.hidden = panel.dataset.panel !== tab.dataset.tab;
+    });
+  });
+});
+
+$('text-input').addEventListener('input', () => {
+  $('text-count').textContent = String($('text-input').value.length);
+});
 
 /* ---------------- 基础 UI ---------------- */
 
@@ -2487,9 +2578,11 @@ async function refreshOcs() {
 function openOc(oc) {
   state.activeOc = oc;
 
-  $('oc-eyebrow').textContent = oc.createdAt
-    ? `角色 · ${new Date(oc.createdAt).toLocaleDateString('zh-CN')}`
-    : '角色';
+  const meta = [];
+  if (oc.createdAt) meta.push(new Date(oc.createdAt).toLocaleDateString('zh-CN'));
+  if (oc.mbti) meta.push(oc.mbti);
+
+  $('oc-eyebrow').textContent = meta.length ? `角色 · ${meta.join(' · ')}` : '角色';
   $('oc-name').textContent = oc.name;
   $('oc-code').textContent = oc.code;
   $('oc-review').textContent = oc.review || '这个角色还没有留下评价。';
@@ -2619,10 +2712,19 @@ $('btn-upload').addEventListener('click', async () => {
     $('character-input').focus();
     return;
   }
-  if (!state.fileText) {
-    toast('先上传角色 txt', 'err');
+
+  const content = state.mode === 'text' ? $('text-input').value : state.fileText;
+  if (!content || !content.trim()) {
+    toast(state.mode === 'text' ? '先把角色文本粘进输入框' : '先上传角色 txt', 'err');
+    if (state.mode === 'text') $('text-input').focus();
     return;
   }
+  if (content.length > TEXT_LIMIT) {
+    toast(`文本 ${content.length} 字，超过 ${TEXT_LIMIT} 上限`, 'err');
+    return;
+  }
+
+  const mbti = $('mbti-select').value || '';
 
   // 同名角色：先问覆盖还是保留成 -A
   let overwriteCode = null;
@@ -2644,7 +2746,7 @@ $('btn-upload').addEventListener('click', async () => {
 
   setBusy(button, true, '侧写中…');
   try {
-    const data = await parseText(state.key, state.fileText, name);
+    const data = await parseText(state.key, content, name, mbti);
     const oc = data.profile;
 
     if (overwriteCode) {
