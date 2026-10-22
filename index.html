@@ -102,33 +102,15 @@ body {
 }
 
 .ornament {
+  display: none;
+}
+
+.stars {
   position: absolute;
-  font-family: "Songti SC", "Times New Roman", Georgia, serif;
-  line-height: 1;
-  color: rgba(178, 190, 255, 0.085);
-  text-shadow: 0 0 60px rgba(140, 160, 255, 0.22);
-  user-select: none;
-  animation: breathe 14s ease-in-out infinite;
-}
-
-.ornament--left {
-  left: -2vw;
-  top: 26%;
-  font-size: clamp(180px, 26vw, 340px);
-  transform: rotate(-14deg);
-}
-
-.ornament--right {
-  right: -2vw;
-  bottom: 14%;
-  font-size: clamp(140px, 20vw, 260px);
-  transform: rotate(16deg);
-  animation-delay: -7s;
-}
-
-@keyframes breathe {
-  0%, 100% { opacity: 0.55; }
-  50% { opacity: 0.95; }
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  opacity: 0.9;
 }
 
 .noise {
@@ -552,8 +534,8 @@ select.input {
 }
 
 @keyframes chartBreathe {
-  0%, 100% { opacity: 0.88; }
-  50% { opacity: 1; }
+  0%, 100% { opacity: 0.9; filter: brightness(0.98); }
+  50% { opacity: 1; filter: brightness(1.07); }
 }
 
 /* 角色页对比控件 */
@@ -733,13 +715,11 @@ select.input {
   </style>
 </head>
 <body>
-  <!-- 背景：弥散光晕 + 噪点 + 花饰 -->
+  <!-- 背景：星图 + 极光 + 噪点 -->
   <div class="backdrop" id="backdrop" aria-hidden="true">
     <div class="aurora aurora--a"></div>
     <div class="aurora aurora--b"></div>
-    <div class="aurora aurora--c"></div>
-    <div class="ornament ornament--left">❦</div>
-    <div class="ornament ornament--right">❦</div>
+    <canvas class="stars" id="stars"></canvas>
     <div class="noise"></div>
   </div>
 
@@ -1465,14 +1445,45 @@ function analyzeCouple(tokenA, tokenB) {
 
 /* ================= public/js/charts.js ================= */
 // public/js/charts.js
-// ECharts 封装：单人雷达（淡金 / 呼吸 / 特质放大 / 极端刺破）、双人叠加、合盘衍生
+// 单人雷达（按善恶取色 / 呼吸 / 特质放大 / 极端刺破）、双人叠加、合盘衍生
 
 
 
-const GOLD = '#f0e2bd';
-const GOLD_LINE = 'rgba(232, 217, 176, 0.88)';
-const BLUE = '#8ea2ff';
 const FONT_FAMILY = '"PingFang SC", "Noto Sans SC", "Microsoft YaHei", system-ui, sans-serif';
+
+// 正向：越高越"神性"；负向：越高越"恶性"
+const POSITIVE_AXES = ['empathy', 'vitality', 'order', 'intellect', 'pride'];
+const NEGATIVE_AXES = ['self_destruction', 'masochism', 'obsession', 'destruction', 'dominance'];
+
+const THEMES = {
+  good: {
+    line: 'rgba(244, 209, 128, 0.95)',
+    node: '#ffe9b8',
+    area: [
+      [0, 'rgba(244, 209, 128, 0.24)'],
+      [1, 'rgba(244, 209, 128, 0.05)'],
+    ],
+    split: 'rgba(244, 209, 128, 0.16)',
+  },
+  neutral: {
+    line: 'rgba(140, 170, 255, 0.92)',
+    node: '#d3ddff',
+    area: [
+      [0, 'rgba(140, 170, 255, 0.20)'],
+      [1, 'rgba(140, 170, 255, 0.04)'],
+    ],
+    split: 'rgba(140, 170, 255, 0.14)',
+  },
+  bad: {
+    line: 'rgba(255, 108, 108, 0.95)',
+    node: '#ffc9c9',
+    area: [
+      [0, 'rgba(255, 96, 96, 0.24)'],
+      [1, 'rgba(255, 96, 96, 0.05)'],
+    ],
+    split: 'rgba(255, 108, 108, 0.16)',
+  },
+};
 
 const resizeBound = new WeakSet();
 
@@ -1527,80 +1538,110 @@ function baseTextStyle() {
   return { color: 'rgba(238, 240, 248, 0.85)', fontFamily: FONT_FAMILY };
 }
 
-function radarBase(splitNumber = 4, radius = '64%') {
+function areaOf(theme) {
+  return {
+    type: 'radial',
+    x: 0.5,
+    y: 0.5,
+    r: 0.5,
+    colorStops: THEMES[theme].area.map(([offset, color]) => ({ offset, color })),
+  };
+}
+
+function radarBase(theme, radius = '62%') {
+  const palette = THEMES[theme];
   return {
     center: ['50%', '50%'],
     radius,
-    splitNumber,
-    axisName: { color: 'rgba(238, 240, 248, 0.62)', fontSize: 11, fontFamily: FONT_FAMILY },
-    splitLine: { lineStyle: { color: 'rgba(232, 217, 176, 0.13)' } },
-    axisLine: { lineStyle: { color: 'rgba(232, 217, 176, 0.16)' } },
+    splitNumber: 4,
+    axisName: { color: 'rgba(238, 240, 248, 0.66)', fontSize: 11, fontFamily: FONT_FAMILY },
+    splitLine: { lineStyle: { color: palette.split } },
+    axisLine: { lineStyle: { color: palette.split } },
     splitArea: {
-      areaStyle: { color: ['rgba(232, 217, 176, 0.035)', 'rgba(232, 217, 176, 0.01)'] },
+      areaStyle: {
+        color: ['rgba(255, 255, 255, 0.022)', 'rgba(255, 255, 255, 0.006)'],
+      },
     },
   };
 }
 
-const GOLD_AREA = {
-  type: 'radial',
-  x: 0.5,
-  y: 0.5,
-  r: 0.5,
-  colorStops: [
-    { offset: 0, color: 'rgba(240, 226, 189, 0.20)' },
-    { offset: 1, color: 'rgba(240, 226, 189, 0.04)' },
-  ],
-};
-
 /* ================= 单人雷达 ================= */
 
+function analyse(raw) {
+  const valueOf = (key) => raw[DIMENSION_KEYS.indexOf(key)] || 0;
+  const avg = (keys) => keys.reduce((sum, key) => sum + valueOf(key), 0) / keys.length;
+
+  const posAvg = avg(POSITIVE_AXES);
+  const negAvg = avg(NEGATIVE_AXES);
+  const spread = Math.max(...raw) - Math.min(...raw);
+
+  const pierced = DIMENSION_KEYS.map((key, index) => {
+    const value = raw[index];
+    if (value < 94 && value > 6) return null;
+    return POSITIVE_AXES.includes(key) ? 'good' : 'bad';
+  });
+
+  let theme = 'neutral';
+  if (pierced.includes('bad')) theme = 'bad';
+  else if (pierced.includes('good')) theme = 'good';
+  else if (spread >= 22) theme = posAvg >= negAvg ? 'good' : 'bad';
+
+  return { theme, pierced };
+}
+
 /**
- * 单 OC：淡金半透明 + 特质放大 + 极端维度刺破外环
+ * 单 OC 雷达
  * @param {HTMLElement|string} dom 容器
  * @param {{ name?: string, scores: object }} data
- * @param {string} [color] 主题色
  */
-function renderOCRadar(dom, data, color = GOLD_LINE) {
+function renderOCRadar(dom, data) {
   const chart = createChart(dom);
   const raw = toSeriesValue(data);
+  const { theme, pierced } = analyse(raw);
 
-  // 离中位越远，放大越多：让"特点"更明显，但不改方向
+  // 离中位越远放大越多，让特点更明显
   const amplified = raw.map((value) => {
     const delta = value - 50;
     const factor = 1 + Math.min(Math.abs(delta) / 90, 0.45);
     return Math.max(0, Math.min(100, Math.round(50 + delta * factor)));
   });
 
-  // 只有真正极端的维度才刺破外环
-  const pierced = raw.map((value) => value >= 94 || value <= 6);
+  const indicator = DIMENSION_KEYS.map((key, index) => {
+    const mark = pierced[index];
+    const label = DIMENSION_LABELS[key];
+    if (!mark) return { name: label, max: 100 };
+    return {
+      name: mark === 'good' ? `{pierceGood|${label}}` : `{pierceBad|${label}}`,
+      max: 82,
+    };
+  });
 
-  const indicator = DIMENSION_KEYS.map((key, index) => ({
-    name: pierced[index] ? `{hot|${DIMENSION_LABELS[key]}}` : DIMENSION_LABELS[key],
-    max: pierced[index] ? 82 : 100,
-  }));
+  const palette = THEMES[theme];
 
   const option = {
     textStyle: baseTextStyle(),
     tooltip: {
       trigger: 'item',
       backgroundColor: 'rgba(12, 12, 20, 0.94)',
-      borderColor: 'rgba(232, 217, 176, 0.3)',
+      borderColor: 'rgba(255, 255, 255, 0.16)',
       borderWidth: 1,
       textStyle: { color: '#eef0f8', fontSize: 12, fontFamily: FONT_FAMILY },
       formatter: () =>
-        DIMENSION_KEYS.map(
-          (key, index) => `${DIMENSION_LABELS[key]}　${raw[index]}${pierced[index] ? ' · 极端' : ''}`
-        ).join('<br/>'),
+        DIMENSION_KEYS.map((key, index) => {
+          const mark = pierced[index] ? ' · 极端' : '';
+          return `${DIMENSION_LABELS[key]}　${raw[index]}${mark}`;
+        }).join('<br/>'),
     },
     radar: {
-      ...radarBase(4, '62%'),
+      ...radarBase(theme, '62%'),
       indicator,
       axisName: {
-        color: 'rgba(238, 240, 248, 0.62)',
+        color: 'rgba(238, 240, 248, 0.66)',
         fontSize: 11,
         fontFamily: FONT_FAMILY,
         rich: {
-          hot: { color: '#ff7b7b', fontSize: 12, fontWeight: 600 },
+          pierceGood: { color: '#ffd88a', fontSize: 12, fontWeight: 600 },
+          pierceBad: { color: '#ff5d5d', fontSize: 12, fontWeight: 600 },
         },
       },
     },
@@ -1612,9 +1653,14 @@ function renderOCRadar(dom, data, color = GOLD_LINE) {
           {
             name: seriesName(data, 'OC'),
             value: amplified,
-            lineStyle: { width: 1.8, color },
-            itemStyle: { color: '#f6ecd4', borderColor: color, borderWidth: 1 },
-            areaStyle: { color: GOLD_AREA },
+            lineStyle: {
+              width: 1.8,
+              color: palette.line,
+              shadowColor: palette.line,
+              shadowBlur: 12,
+            },
+            itemStyle: { color: palette.node, borderColor: palette.line, borderWidth: 1 },
+            areaStyle: { color: areaOf(theme) },
           },
         ],
       },
@@ -1622,6 +1668,7 @@ function renderOCRadar(dom, data, color = GOLD_LINE) {
   };
 
   chart.setOption(option, true);
+  chart.__theme = theme;
   return chart;
 }
 
@@ -1633,13 +1680,15 @@ function renderOverlayRadar(dom, dataA, dataB) {
   const indicator = DIMENSION_KEYS.map((key) => ({ name: DIMENSION_LABELS[key], max: 100 }));
   const nameA = seriesName(dataA, 'OC 1');
   const nameB = seriesName(dataB, 'OC 2');
+  const themeA = analyse(toSeriesValue(dataA)).theme;
+  const paletteA = THEMES[themeA];
 
   const option = {
     textStyle: baseTextStyle(),
     tooltip: {
       trigger: 'item',
       backgroundColor: 'rgba(12, 12, 20, 0.94)',
-      borderColor: 'rgba(232, 217, 176, 0.3)',
+      borderColor: 'rgba(255, 255, 255, 0.16)',
       borderWidth: 1,
       textStyle: { color: '#eef0f8', fontSize: 12, fontFamily: FONT_FAMILY },
     },
@@ -1651,7 +1700,7 @@ function renderOverlayRadar(dom, dataA, dataB) {
       textStyle: { color: 'rgba(238, 240, 248, 0.8)', fontSize: 11, fontFamily: FONT_FAMILY },
       data: [nameA, nameB],
     },
-    radar: { ...radarBase(4, '58%'), indicator },
+    radar: { ...radarBase('neutral', '58%'), indicator },
     series: [
       {
         type: 'radar',
@@ -1660,20 +1709,9 @@ function renderOverlayRadar(dom, dataA, dataB) {
           {
             name: nameA,
             value: toSeriesValue(dataA),
-            lineStyle: { width: 1.9, color: GOLD_LINE },
-            itemStyle: { color: '#f6ecd4' },
-            areaStyle: {
-              color: {
-                type: 'radial',
-                x: 0.5,
-                y: 0.5,
-                r: 0.5,
-                colorStops: [
-                  { offset: 0, color: 'rgba(240, 226, 189, 0.16)' },
-                  { offset: 1, color: 'rgba(240, 226, 189, 0.03)' },
-                ],
-              },
-            },
+            lineStyle: { width: 1.9, color: paletteA.line },
+            itemStyle: { color: paletteA.node },
+            areaStyle: { color: areaOf(themeA) },
           },
           {
             name: nameB,
@@ -1713,11 +1751,11 @@ function renderDerivedRadar(dom, derivedData) {
     tooltip: {
       trigger: 'item',
       backgroundColor: 'rgba(12, 12, 20, 0.94)',
-      borderColor: 'rgba(232, 217, 176, 0.3)',
+      borderColor: 'rgba(255, 255, 255, 0.16)',
       borderWidth: 1,
       textStyle: { color: '#eef0f8', fontSize: 12, fontFamily: FONT_FAMILY },
     },
-    radar: { ...radarBase(4, '60%'), indicator },
+    radar: { ...radarBase('good', '60%'), indicator },
     series: [
       {
         type: 'radar',
@@ -1727,9 +1765,9 @@ function renderDerivedRadar(dom, derivedData) {
           {
             name: '合盘',
             value: data,
-            lineStyle: { width: 1.8, color: GOLD_LINE },
-            itemStyle: { color: '#f6ecd4', borderColor: GOLD_LINE, borderWidth: 1 },
-            areaStyle: { color: GOLD_AREA },
+            lineStyle: { width: 1.8, color: THEMES.good.line, shadowColor: THEMES.good.line, shadowBlur: 10 },
+            itemStyle: { color: THEMES.good.node, borderColor: THEMES.good.line, borderWidth: 1 },
+            areaStyle: { color: areaOf('good') },
             label: {
               show: true,
               color: '#eef0f8',
@@ -1746,8 +1784,6 @@ function renderDerivedRadar(dom, derivedData) {
   chart.setOption(option, true);
   return chart;
 }
-
-export { BLUE };
 
 
 /* ================= public/js/api.js ================= */
@@ -1905,8 +1941,6 @@ function useCoupon(key, coupon) {
 
 const STORAGE_KEY = 'oc_engine_key';
 const TEXT_LIMIT = 30000;
-const OC_COLOR_A = 'rgba(232, 217, 176, 0.9)';
-const OC_COLOR_B = '#8ea2ff';
 const DERIVED_ORDER = ['conflict', 'redemption', 'balance', 'resonance', 'painLink'];
 
 const $ = (id) => document.getElementById(id);
@@ -1976,6 +2010,9 @@ function go(id) {
   // 回到素材页：上传区一律恢复未读取状态
   if (id === 'screen-2') resetUpload();
 
+  // 进入合盘页：先清空上一次的结果，等玩家自己点「开始合盘」
+  if (id === 'screen-4') resetMatchView();
+
   const prev = $(state.screen);
   state.screen = id;
 
@@ -2027,6 +2064,34 @@ function clearStoredKey() {
   } catch {
     /* ignore */
   }
+}
+
+/* ---------------- 上传区复位 ---------------- */
+
+function disposeChart(id) {
+  const el = $(id);
+  if (!el) return;
+  if (typeof echarts !== 'undefined') {
+    const instance = echarts.getInstanceByDom(el);
+    if (instance) instance.dispose();
+  }
+  el.innerHTML = '';
+}
+
+function resetMatchView() {
+  $('panel-derived').hidden = true;
+  $('radar-pair').hidden = false;
+  $('radar-box-a').classList.remove('explode-anim');
+  $('radar-box-b').classList.remove('explode-anim');
+
+  $('radar-title-a').textContent = '角色 A';
+  $('radar-title-b').textContent = '角色 B';
+  $('entry-title').textContent = '';
+  $('entry-desc').textContent = '';
+
+  disposeChart('radar-chart-a');
+  disposeChart('radar-chart-b');
+  disposeChart('derived-chart');
 }
 
 /* ---------------- 上传区复位 ---------------- */
@@ -2204,7 +2269,7 @@ function openOc(oc) {
   go('screen-3');
   // 等换幕过渡结束、容器有尺寸后再画
   setTimeout(() => {
-    renderOCRadar($('oc-chart'), { name: oc.name, scores: oc.scores }, OC_COLOR_A);
+    renderOCRadar($('oc-chart'), { name: oc.name, scores: oc.scores });
   }, 360);
 }
 
@@ -2460,8 +2525,8 @@ $('btn-match').addEventListener('click', async () => {
     $('radar-title-a').textContent = `${a.name} · ${a.code}`;
     $('radar-title-b').textContent = `${b.name} · ${b.code}`;
 
-    renderOCRadar($('radar-chart-a'), { name: a.name, scores: a.scores }, OC_COLOR_A);
-    renderOCRadar($('radar-chart-b'), { name: b.name, scores: b.scores }, OC_COLOR_B);
+    renderOCRadar($('radar-chart-a'), { name: a.name, scores: a.scores });
+    renderOCRadar($('radar-chart-b'), { name: b.name, scores: b.scores });
 
     await wait(650);
 
@@ -2674,6 +2739,138 @@ $('btn-feedback-submit').addEventListener('click', async () => {
   }
 });
 
+/* ---------------- 背景星图 ---------------- */
+
+function initSky() {
+  const canvas = $('stars');
+  if (!canvas) return;
+
+  const ctx = canvas.getContext('2d');
+  if (!ctx) return;
+
+  const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  let width = 0;
+  let height = 0;
+  let groups = [];
+  let lastSpawn = 0;
+  let raf = 0;
+
+  function buildGroups() {
+    groups = [];
+    const count = 7;
+
+    for (let i = 0; i < count; i += 1) {
+      const cx = 0.08 + Math.random() * 0.84;
+      const cy = 0.08 + Math.random() * 0.84;
+      const size = 4 + Math.floor(Math.random() * 4);
+      const radius = Math.min(width, height) * (0.05 + Math.random() * 0.11);
+      const spin = Math.random() * Math.PI * 2;
+      const points = [];
+
+      for (let j = 0; j < size; j += 1) {
+        const angle = spin + (j / size) * Math.PI * 2 + (Math.random() - 0.5) * 0.7;
+        const r = radius * (0.55 + Math.random() * 0.65);
+        points.push({ x: cx * width + Math.cos(angle) * r, y: cy * height + Math.sin(angle) * r });
+      }
+
+      groups.push({ points, born: -1e9, life: 0 });
+    }
+  }
+
+  function resize() {
+    const dpr = Math.min(window.devicePixelRatio || 1, 2);
+    width = canvas.clientWidth || window.innerWidth;
+    height = canvas.clientHeight || window.innerHeight;
+    canvas.width = Math.round(width * dpr);
+    canvas.height = Math.round(height * dpr);
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    buildGroups();
+  }
+
+  function drawGroup(group, now) {
+    const age = (now - group.born) / 1000;
+    if (age < 0) return;
+
+    const draw = Math.min(1, age / 2.4);
+    const fade = age > 8 ? Math.max(0, 1 - (age - 8) / 4) : 1;
+    if (fade <= 0) return;
+
+    const points = group.points;
+    const edges = points.length;
+
+    ctx.lineWidth = 0.9;
+    ctx.strokeStyle = `rgba(158, 178, 255, ${0.20 * draw * fade})`;
+    ctx.shadowColor = 'rgba(140, 160, 255, 0.5)';
+    ctx.shadowBlur = 6;
+
+    ctx.beginPath();
+    for (let i = 0; i < edges; i += 1) {
+      const progress = draw * edges - i;
+      if (progress <= 0) break;
+
+      const from = points[i];
+      const to = points[(i + 1) % edges];
+      const k = Math.min(1, progress);
+      ctx.moveTo(from.x, from.y);
+      ctx.lineTo(from.x + (to.x - from.x) * k, from.y + (to.y - from.y) * k);
+    }
+    ctx.stroke();
+
+    for (let i = 0; i < points.length; i += 1) {
+      const tone = i / points.length;
+      const tone2 = Math.min(1, tone * draw * 1.5);
+      const glow = 0.28 + 0.5 * tone2;
+
+      ctx.beginPath();
+      ctx.fillStyle = `rgba(214, 224, 255, ${glow * fade})`;
+      ctx.arc(points[i].x, points[i].y, 1.7, 0, Math.PI * 2);
+      ctx.fill();
+
+      ctx.beginPath();
+      ctx.fillStyle = `rgba(150, 172, 255, ${0.10 * fade})`;
+      ctx.arc(points[i].x, points[i].y, 6, 0, Math.PI * 2);
+      ctx.fill();
+    }
+
+    ctx.shadowBlur = 0;
+  }
+
+  function frame(now) {
+    ctx.clearRect(0, 0, width, height);
+
+    if (!reduced && now - lastSpawn > 2600) {
+      const idle = groups.filter((group) => (now - group.born) / 1000 > 10);
+      const pick = (idle.length ? idle : groups)[Math.floor(Math.random() * (idle.length || groups.length))];
+      if (pick) pick.born = now;
+      lastSpawn = now;
+    }
+
+    for (const group of groups) drawGroup(group, now);
+
+    if (!reduced) raf = requestAnimationFrame(frame);
+  }
+
+  resize();
+  window.addEventListener('resize', resize);
+
+  if (reduced) {
+    drawGroup(groups[0], performance.now());
+    return;
+  }
+
+  groups[0].born = performance.now();
+  raf = requestAnimationFrame(frame);
+
+  document.addEventListener('visibilitychange', () => {
+    if (document.hidden) {
+      cancelAnimationFrame(raf);
+    } else {
+      lastSpawn = 0;
+      raf = requestAnimationFrame(frame);
+    }
+  });
+}
+
 /* ---------------- 背景视差 ---------------- */
 
 const backdrop = $('backdrop');
@@ -2695,6 +2892,8 @@ if (backdrop && window.matchMedia('(hover: hover)').matches) {
   const first = $('screen-1');
   first.hidden = false;
   requestAnimationFrame(() => first.classList.add('is-active'));
+
+  initSky();
 
   const stored = readStoredKey();
   if (stored) {
