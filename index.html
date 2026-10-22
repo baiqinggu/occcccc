@@ -42,59 +42,100 @@ body {
   overflow-x: hidden;
 }
 
-/* ================= 背景玫瑰 ================= */
+/* ================= 背景：弥散极光 + 噪点 + 花饰 ================= */
 
 .backdrop {
   position: fixed;
-  inset: -6%;
+  inset: -8%;
   z-index: 0;
   pointer-events: none;
-  transition: transform 0.6s var(--ease);
+  overflow: hidden;
+  transition: transform 0.9s var(--ease);
 }
 
-.rose {
+.aurora {
   position: absolute;
-  top: 4%;
-  right: -4%;
-  width: min(560px, 62vw);
-  height: auto;
-  opacity: 0.42;
-  animation: breathe 9s ease-in-out infinite;
+  border-radius: 50%;
+  filter: blur(70px);
+  opacity: 0.75;
+  mix-blend-mode: screen;
+  animation: drift 22s ease-in-out infinite alternate;
+}
+
+.aurora--a {
+  left: -22vw;
+  top: -14vw;
+  width: 72vw;
+  height: 72vw;
+  background: radial-gradient(circle at 42% 42%, rgba(116, 96, 235, 0.30), transparent 64%);
+}
+
+.aurora--b {
+  right: -24vw;
+  bottom: -18vw;
+  width: 82vw;
+  height: 82vw;
+  background: radial-gradient(circle at 58% 58%, rgba(74, 120, 255, 0.22), transparent 64%);
+  animation-delay: -8s;
+}
+
+.aurora--c {
+  left: 28%;
+  top: 30%;
+  width: 54vw;
+  height: 54vw;
+  opacity: 0.5;
+  background: conic-gradient(
+    from 205deg at 50% 50%,
+    rgba(154, 171, 255, 0.10),
+    transparent 38%,
+    rgba(122, 92, 220, 0.10),
+    transparent 72%,
+    rgba(154, 171, 255, 0.08)
+  );
+  animation-delay: -14s;
+}
+
+@keyframes drift {
+  from { transform: translate3d(0, 0, 0) scale(1); }
+  to { transform: translate3d(3vw, 2vw, 0) scale(1.08); }
+}
+
+.ornament {
+  position: absolute;
+  font-family: "Songti SC", "Times New Roman", Georgia, serif;
+  line-height: 1;
+  color: rgba(178, 190, 255, 0.085);
+  text-shadow: 0 0 60px rgba(140, 160, 255, 0.22);
+  user-select: none;
+  animation: breathe 14s ease-in-out infinite;
+}
+
+.ornament--left {
+  left: -2vw;
+  top: 26%;
+  font-size: clamp(180px, 26vw, 340px);
+  transform: rotate(-14deg);
+}
+
+.ornament--right {
+  right: -2vw;
+  bottom: 14%;
+  font-size: clamp(140px, 20vw, 260px);
+  transform: rotate(16deg);
+  animation-delay: -7s;
 }
 
 @keyframes breathe {
-  0%, 100% { opacity: 0.34; }
-  50% { opacity: 0.5; }
+  0%, 100% { opacity: 0.55; }
+  50% { opacity: 0.95; }
 }
 
-.rose-lines path {
-  stroke-dasharray: 1400;
-  stroke-dashoffset: 1400;
-  animation: draw 2.8s var(--ease) forwards;
-}
-
-.rose-lines path:nth-child(2) { animation-delay: 0.25s; }
-.rose-lines path:nth-child(3) { animation-delay: 0.5s; }
-.rose-lines path:nth-child(4) { animation-delay: 0.8s; }
-.rose-lines path:nth-child(5) { animation-delay: 1.05s; }
-.rose-lines path:nth-child(6) { animation-delay: 1.3s; }
-.rose-lines path:nth-child(7) { animation-delay: 1.5s; }
-.rose-lines path:nth-child(8) { animation-delay: 1.75s; }
-.rose-lines path:nth-child(9) { animation-delay: 1.95s; }
-.rose-lines path:nth-child(10) { animation-delay: 2.1s; }
-.rose-lines path:nth-child(11) { animation-delay: 2.25s; }
-.rose-lines path:nth-child(12) { animation-delay: 2.4s; }
-
-@keyframes draw {
-  to { stroke-dashoffset: 0; }
-}
-
-.grain {
+.noise {
   position: absolute;
   inset: 0;
-  opacity: 0.05;
-  background-image: radial-gradient(rgba(255, 255, 255, 0.9) 0.5px, transparent 0.5px);
-  background-size: 3px 3px;
+  opacity: 0.032;
+  background-image: url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='160' height='160' filter='url(%23n)'/%3E%3C/svg%3E");
 }
 
 /* ================= 屏幕切换 ================= */
@@ -483,8 +524,29 @@ select.input {
   height: 470px;
   border: 1px solid var(--line);
   border-radius: var(--radius);
-  background: radial-gradient(circle at 50% 50%, rgba(154, 171, 255, 0.09), transparent 68%);
+  background: radial-gradient(circle at 50% 50%, rgba(232, 217, 176, 0.07), transparent 68%);
 }
+
+/* 雷达呼吸 */
+.oc-chart canvas,
+.radar-box__canvas canvas {
+  animation: chartBreathe 7.5s ease-in-out infinite;
+}
+
+@keyframes chartBreathe {
+  0%, 100% { opacity: 0.88; }
+  50% { opacity: 1; }
+}
+
+/* 角色页对比控件 */
+.compare {
+  margin-left: auto;
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.input--sm { width: 190px; padding: 9px 12px; font-size: 12px; }
 
 .oc-text { display: flex; flex-direction: column; gap: 14px; }
 
@@ -653,39 +715,14 @@ select.input {
   </style>
 </head>
 <body>
-  <!-- 背景：单线玫瑰 -->
+  <!-- 背景：弥散光晕 + 噪点 + 花饰 -->
   <div class="backdrop" id="backdrop" aria-hidden="true">
-    <svg class="rose" viewBox="0 0 620 760" fill="none" preserveAspectRatio="xMidYMid meet">
-      <defs>
-        <linearGradient id="roseGrad" x1="0" y1="0" x2="1" y2="1">
-          <stop offset="0%" stop-color="#e6e9ff" stop-opacity="0.95" />
-          <stop offset="52%" stop-color="#9aabff" stop-opacity="0.6" />
-          <stop offset="100%" stop-color="#6f5be0" stop-opacity="0.22" />
-        </linearGradient>
-        <filter id="roseGlow" x="-30%" y="-30%" width="160%" height="160%">
-          <feGaussianBlur stdDeviation="3.2" result="blur" />
-          <feMerge>
-            <feMergeNode in="blur" />
-            <feMergeNode in="SourceGraphic" />
-          </feMerge>
-        </filter>
-      </defs>
-      <g class="rose-lines" stroke="url(#roseGrad)" stroke-width="1.15" stroke-linecap="round" stroke-linejoin="round" filter="url(#roseGlow)">
-        <path d="M310 300c-7-19 4-36 23-38 26-3 45 15 45 38 0 32-24 55-53 59-42 6-77-21-81-61-5-51 34-91 88-93" />
-        <path d="M332 300c-3-9 3-16 11-17 11-1 19 7 19 17 0 14-11 25-24 26" />
-        <path d="M310 300c0 36 26 62 62 63 52 2 92-42 93-96" />
-        <path d="M188 268c-26-4-42 24-28 46 12 19 38 20 52 4" />
-        <path d="M420 210c30-8 55 18 45 46-8 23-36 32-56 18" />
-        <path d="M226 210c-22-24-8-60 22-66 24-5 46 10 52 32" />
-        <path d="M300 414c0 54-14 100-46 140-18 23-40 40-64 52" />
-        <path d="M286 470c-30-16-64-10-84 12 26 16 62 12 84-12z" />
-        <path d="M268 540c-26-14-56-8-74 12 24 14 56 8 74-12z" />
-        <path d="M262 505l-12 18" />
-        <path d="M247 560l-13 17" />
-        <path d="M186 640c14-6 26-16 34-30" />
-      </g>
-    </svg>
-    <div class="grain"></div>
+    <div class="aurora aurora--a"></div>
+    <div class="aurora aurora--b"></div>
+    <div class="aurora aurora--c"></div>
+    <div class="ornament ornament--left">❦</div>
+    <div class="ornament ornament--right">❦</div>
+    <div class="noise"></div>
   </div>
 
   <div class="toast-wrap" id="toast-wrap" aria-live="polite"></div>
@@ -794,6 +831,10 @@ select.input {
         <p class="eyebrow" id="oc-eyebrow">角色</p>
         <h2 class="display display--sm" id="oc-name">—</h2>
         <button id="oc-code" class="code-chip" type="button">OC-XXXX</button>
+        <div class="compare">
+          <select id="compare-select" class="input input--sm"></select>
+          <button id="btn-compare" class="btn btn-line btn-sm" type="button">对比</button>
+        </div>
       </div>
 
       <div class="oc-body">
@@ -801,7 +842,7 @@ select.input {
 
         <div class="oc-text">
           <div class="panel">
-            <p class="eyebrow">读者视角</p>
+            <p class="eyebrow">批注</p>
             <p class="review" id="oc-review">—</p>
           </div>
           <div class="panel">
@@ -1392,20 +1433,18 @@ function analyzeCouple(tokenA, tokenB) {
 
 /* ================= public/js/charts.js ================= */
 // public/js/charts.js
-// ECharts 封装：双人叠加雷达（10 维）+ 合盘衍生雷达（5 维）
+// ECharts 封装：单人雷达（淡金 / 呼吸 / 特质放大 / 极端刺破）、双人叠加、合盘衍生
 
 
 
-const COLOR_A = '#e8e8f2'; // OC1：冷白
-const COLOR_B = '#8ea2ff'; // OC2：雾蓝
-const COLOR_DERIVED = '#b9c4ff';
+const GOLD = '#f0e2bd';
+const GOLD_LINE = 'rgba(232, 217, 176, 0.88)';
+const BLUE = '#8ea2ff';
+const FONT_FAMILY = '"PingFang SC", "Noto Sans SC", "Microsoft YaHei", system-ui, sans-serif';
 
-const FONT_FAMILY = '"Noto Sans SC", "PingFang SC", "Microsoft YaHei", system-ui, sans-serif';
-
-// 已绑定 resize 的容器，避免重复监听
 const resizeBound = new WeakSet();
 
-/* ================= 通用工具 ================= */
+/* ================= 通用 ================= */
 
 function resolveElement(dom) {
   const el = typeof dom === 'string' ? document.querySelector(dom) : dom;
@@ -1414,7 +1453,8 @@ function resolveElement(dom) {
 }
 
 function toSeriesValue(scores) {
-  const bag = scores && typeof scores.scores === 'object' && scores.scores !== null ? scores.scores : scores || {};
+  const bag =
+    scores && typeof scores.scores === 'object' && scores.scores !== null ? scores.scores : scores || {};
   return DIMENSION_KEYS.map((key) => {
     const num = Number(bag[key]);
     if (!Number.isFinite(num)) return 0;
@@ -1440,11 +1480,9 @@ function bindResize(el) {
 }
 
 function createChart(dom) {
-  if (typeof echarts === 'undefined') {
-    throw new Error('ECharts 未加载，请检查 CDN 引入');
-  }
+  if (typeof echarts === 'undefined') throw new Error('ECharts 未加载');
   const el = resolveElement(dom);
-  el.innerHTML = ''; // 清掉占位文案
+  el.innerHTML = '';
   const exist = echarts.getInstanceByDom(el);
   if (exist) exist.dispose();
 
@@ -1454,86 +1492,97 @@ function createChart(dom) {
 }
 
 function baseTextStyle() {
+  return { color: 'rgba(238, 240, 248, 0.85)', fontFamily: FONT_FAMILY };
+}
+
+function radarBase(splitNumber = 4, radius = '64%') {
   return {
-    color: 'rgba(232, 233, 245, 0.85)',
-    fontFamily: FONT_FAMILY,
+    center: ['50%', '50%'],
+    radius,
+    splitNumber,
+    axisName: { color: 'rgba(238, 240, 248, 0.62)', fontSize: 11, fontFamily: FONT_FAMILY },
+    splitLine: { lineStyle: { color: 'rgba(232, 217, 176, 0.13)' } },
+    axisLine: { lineStyle: { color: 'rgba(232, 217, 176, 0.16)' } },
+    splitArea: {
+      areaStyle: { color: ['rgba(232, 217, 176, 0.035)', 'rgba(232, 217, 176, 0.01)'] },
+    },
   };
 }
 
-function baseTooltip() {
-  return {
-    trigger: 'item',
-    backgroundColor: 'rgba(10, 10, 20, 0.92)',
-    borderColor: 'rgba(160, 170, 255, 0.25)',
-    borderWidth: 1,
-    textStyle: { color: '#e8e9f5', fontSize: 12, fontFamily: FONT_FAMILY },
-  };
-}
+const GOLD_AREA = {
+  type: 'radial',
+  x: 0.5,
+  y: 0.5,
+  r: 0.5,
+  colorStops: [
+    { offset: 0, color: 'rgba(240, 226, 189, 0.20)' },
+    { offset: 1, color: 'rgba(240, 226, 189, 0.04)' },
+  ],
+};
 
-/* ================= 10 维叠加雷达 ================= */
+/* ================= 单人雷达 ================= */
 
 /**
- * OC1 实线 + OC2 虚线（50% 透明）的 10 维叠加雷达
- * @param {HTMLElement|string} dom 容器或选择器
- * @param {object} dataA { name, scores } 或直接 { empathy: 80, ... }
- * @param {object} dataB 同上
- * @returns {object} ECharts 实例
+ * 单 OC：淡金半透明 + 特质放大 + 极端维度刺破外环
+ * @param {HTMLElement|string} dom 容器
+ * @param {{ name?: string, scores: object }} data
+ * @param {string} [color] 主题色
  */
-function renderOverlayRadar(dom, dataA, dataB) {
+function renderOCRadar(dom, data, color = GOLD_LINE) {
   const chart = createChart(dom);
+  const raw = toSeriesValue(data);
 
-  const indicator = DIMENSION_KEYS.map((key) => ({ name: DIMENSION_LABELS[key], max: 100 }));
-  const nameA = seriesName(dataA, 'OC 1');
-  const nameB = seriesName(dataB, 'OC 2');
+  // 离中位越远，放大越多：让"特点"更明显，但不改方向
+  const amplified = raw.map((value) => {
+    const delta = value - 50;
+    const factor = 1 + Math.min(Math.abs(delta) / 90, 0.45);
+    return Math.max(0, Math.min(100, Math.round(50 + delta * factor)));
+  });
+
+  // 只有真正极端的维度才刺破外环
+  const pierced = raw.map((value) => value >= 94 || value <= 6);
+
+  const indicator = DIMENSION_KEYS.map((key, index) => ({
+    name: pierced[index] ? `{hot|${DIMENSION_LABELS[key]}}` : DIMENSION_LABELS[key],
+    max: pierced[index] ? 82 : 100,
+  }));
 
   const option = {
     textStyle: baseTextStyle(),
-    tooltip: baseTooltip(),
-    legend: {
-      bottom: 6,
-      itemGap: 22,
-      itemWidth: 20,
-      itemHeight: 10,
-      textStyle: { color: 'rgba(232, 233, 245, 0.85)', fontSize: 12, fontFamily: FONT_FAMILY },
-      data: [nameA, nameB],
+    tooltip: {
+      trigger: 'item',
+      backgroundColor: 'rgba(12, 12, 20, 0.94)',
+      borderColor: 'rgba(232, 217, 176, 0.3)',
+      borderWidth: 1,
+      textStyle: { color: '#eef0f8', fontSize: 12, fontFamily: FONT_FAMILY },
+      formatter: () =>
+        DIMENSION_KEYS.map(
+          (key, index) => `${DIMENSION_LABELS[key]}　${raw[index]}${pierced[index] ? ' · 极端' : ''}`
+        ).join('<br/>'),
     },
     radar: {
-      center: ['50%', '47%'],
-      radius: '60%',
-      splitNumber: 4,
+      ...radarBase(4, '62%'),
       indicator,
       axisName: {
-        color: 'rgba(232, 233, 245, 0.72)',
-        fontSize: 12,
+        color: 'rgba(238, 240, 248, 0.62)',
+        fontSize: 11,
         fontFamily: FONT_FAMILY,
-      },
-      splitLine: { lineStyle: { color: 'rgba(160, 170, 255, 0.18)' } },
-      axisLine: { lineStyle: { color: 'rgba(160, 170, 255, 0.22)' } },
-      splitArea: {
-        areaStyle: {
-          color: ['rgba(139, 108, 255, 0.045)', 'rgba(139, 108, 255, 0.012)'],
+        rich: {
+          hot: { color: '#ff7b7b', fontSize: 12, fontWeight: 600 },
         },
       },
     },
     series: [
       {
         type: 'radar',
-        symbolSize: 5,
+        symbolSize: 4,
         data: [
           {
-            name: nameA,
-            value: toSeriesValue(dataA),
-            lineStyle: { width: 2, color: COLOR_A },
-            itemStyle: { color: COLOR_A },
-            areaStyle: { color: 'rgba(232, 232, 242, 0.10)' },
-          },
-          {
-            name: nameB,
-            value: toSeriesValue(dataB),
-            // 虚线 + 50% 透明度
-            lineStyle: { width: 1.6, type: 'dashed', color: 'rgba(142, 162, 255, 0.6)' },
-            itemStyle: { color: 'rgba(142, 162, 255, 0.6)' },
-            areaStyle: { color: 'rgba(142, 162, 255, 0.10)' },
+            name: seriesName(data, 'OC'),
+            value: amplified,
+            lineStyle: { width: 1.8, color },
+            itemStyle: { color: '#f6ecd4', borderColor: color, borderWidth: 1 },
+            areaStyle: { color: GOLD_AREA },
           },
         ],
       },
@@ -1544,15 +1593,74 @@ function renderOverlayRadar(dom, dataA, dataB) {
   return chart;
 }
 
-/* ================= 5 维衍生雷达 ================= */
+/* ================= 双人叠加（一实一虚） ================= */
 
-/**
- * 合盘衍生维度雷达（冲突指数 / 救赎概率 / 掌控平衡 / 疯狂共振 / 痛觉链接）
- * @param {HTMLElement|string} dom 容器或选择器
- * @param {object} derivedData { conflict, redemption, balance, resonance, painLink }，
- *                             也接受 analyzeCouple() 返回的 { derived } 结构
- * @returns {object} ECharts 实例
- */
+function renderOverlayRadar(dom, dataA, dataB) {
+  const chart = createChart(dom);
+
+  const indicator = DIMENSION_KEYS.map((key) => ({ name: DIMENSION_LABELS[key], max: 100 }));
+  const nameA = seriesName(dataA, 'OC 1');
+  const nameB = seriesName(dataB, 'OC 2');
+
+  const option = {
+    textStyle: baseTextStyle(),
+    tooltip: {
+      trigger: 'item',
+      backgroundColor: 'rgba(12, 12, 20, 0.94)',
+      borderColor: 'rgba(232, 217, 176, 0.3)',
+      borderWidth: 1,
+      textStyle: { color: '#eef0f8', fontSize: 12, fontFamily: FONT_FAMILY },
+    },
+    legend: {
+      bottom: 4,
+      itemGap: 20,
+      itemWidth: 18,
+      itemHeight: 8,
+      textStyle: { color: 'rgba(238, 240, 248, 0.8)', fontSize: 11, fontFamily: FONT_FAMILY },
+      data: [nameA, nameB],
+    },
+    radar: { ...radarBase(4, '58%'), indicator },
+    series: [
+      {
+        type: 'radar',
+        symbolSize: 4,
+        data: [
+          {
+            name: nameA,
+            value: toSeriesValue(dataA),
+            lineStyle: { width: 1.9, color: GOLD_LINE },
+            itemStyle: { color: '#f6ecd4' },
+            areaStyle: {
+              color: {
+                type: 'radial',
+                x: 0.5,
+                y: 0.5,
+                r: 0.5,
+                colorStops: [
+                  { offset: 0, color: 'rgba(240, 226, 189, 0.16)' },
+                  { offset: 1, color: 'rgba(240, 226, 189, 0.03)' },
+                ],
+              },
+            },
+          },
+          {
+            name: nameB,
+            value: toSeriesValue(dataB),
+            lineStyle: { width: 1.4, type: 'dashed', color: 'rgba(142, 162, 255, 0.75)' },
+            itemStyle: { color: 'rgba(142, 162, 255, 0.7)' },
+            areaStyle: { color: 'rgba(142, 162, 255, 0.06)' },
+          },
+        ],
+      },
+    ],
+  };
+
+  chart.setOption(option, true);
+  return chart;
+}
+
+/* ================= 合盘衍生雷达 ================= */
+
 function renderDerivedRadar(dom, derivedData) {
   const chart = createChart(dom);
 
@@ -1570,40 +1678,29 @@ function renderDerivedRadar(dom, derivedData) {
 
   const option = {
     textStyle: baseTextStyle(),
-    tooltip: baseTooltip(),
-    radar: {
-      center: ['50%', '52%'],
-      radius: '62%',
-      splitNumber: 4,
-      indicator,
-      axisName: {
-        color: 'rgba(232, 233, 245, 0.72)',
-        fontSize: 12,
-        fontFamily: FONT_FAMILY,
-      },
-      splitLine: { lineStyle: { color: 'rgba(160, 170, 255, 0.18)' } },
-      axisLine: { lineStyle: { color: 'rgba(160, 170, 255, 0.22)' } },
-      splitArea: {
-        areaStyle: {
-          color: ['rgba(139, 108, 255, 0.05)', 'rgba(139, 108, 255, 0.012)'],
-        },
-      },
+    tooltip: {
+      trigger: 'item',
+      backgroundColor: 'rgba(12, 12, 20, 0.94)',
+      borderColor: 'rgba(232, 217, 176, 0.3)',
+      borderWidth: 1,
+      textStyle: { color: '#eef0f8', fontSize: 12, fontFamily: FONT_FAMILY },
     },
+    radar: { ...radarBase(4, '60%'), indicator },
     series: [
       {
         type: 'radar',
         symbol: 'diamond',
-        symbolSize: 7,
+        symbolSize: 6,
         data: [
           {
-            name: '合盘结果',
+            name: '合盘',
             value: data,
-            lineStyle: { width: 2, color: COLOR_DERIVED },
-            itemStyle: { color: '#dfe4ff', borderColor: COLOR_DERIVED, borderWidth: 1 },
-            areaStyle: { color: 'rgba(185, 196, 255, 0.16)' },
+            lineStyle: { width: 1.8, color: GOLD_LINE },
+            itemStyle: { color: '#f6ecd4', borderColor: GOLD_LINE, borderWidth: 1 },
+            areaStyle: { color: GOLD_AREA },
             label: {
               show: true,
-              color: '#e8e9f5',
+              color: '#eef0f8',
               fontSize: 11,
               fontFamily: FONT_FAMILY,
               formatter: (params) => params.value,
@@ -1618,68 +1715,7 @@ function renderDerivedRadar(dom, derivedData) {
   return chart;
 }
 
-/* ================= 单人 10 维雷达 ================= */
-
-function withAlpha(hex, alpha) {
-  const value = String(hex).replace('#', '');
-  const full = value.length === 3 ? value.split('').map((c) => c + c).join('') : value;
-  const r = parseInt(full.slice(0, 2), 16) || 0;
-  const g = parseInt(full.slice(2, 4), 16) || 0;
-  const b = parseInt(full.slice(4, 6), 16) || 0;
-  return `rgba(${r}, ${g}, ${b}, ${alpha})`;
-}
-
-/**
- * 单 OC 的 10 维雷达
- * @param {HTMLElement|string} dom 容器
- * @param {{ name?: string, scores: object }} data
- * @param {string} [color] 主题色
- * @returns {object} ECharts 实例
- */
-function renderOCRadar(dom, data, color = COLOR_A) {
-  const chart = createChart(dom);
-
-  const indicator = DIMENSION_KEYS.map((key) => ({ name: DIMENSION_LABELS[key], max: 100 }));
-
-  const option = {
-    textStyle: baseTextStyle(),
-    tooltip: baseTooltip(),
-    radar: {
-      center: ['50%', '50%'],
-      radius: '64%',
-      splitNumber: 4,
-      indicator,
-      axisName: {
-        color: 'rgba(232, 233, 245, 0.7)',
-        fontSize: 11,
-        fontFamily: FONT_FAMILY,
-      },
-      splitLine: { lineStyle: { color: 'rgba(160, 170, 255, 0.18)' } },
-      axisLine: { lineStyle: { color: 'rgba(160, 170, 255, 0.22)' } },
-      splitArea: {
-        areaStyle: { color: ['rgba(139, 108, 255, 0.045)', 'rgba(139, 108, 255, 0.012)'] },
-      },
-    },
-    series: [
-      {
-        type: 'radar',
-        symbolSize: 5,
-        data: [
-          {
-            name: seriesName(data, 'OC'),
-            value: toSeriesValue(data),
-            lineStyle: { width: 2, color },
-            itemStyle: { color },
-            areaStyle: { color: withAlpha(color, 0.14) },
-          },
-        ],
-      },
-    ],
-  };
-
-  chart.setOption(option, true);
-  return chart;
-}
+export { BLUE };
 
 
 /* ================= public/js/api.js ================= */
@@ -1837,7 +1873,7 @@ function useCoupon(key, coupon) {
 
 const STORAGE_KEY = 'oc_engine_key';
 const TEXT_LIMIT = 30000;
-const OC_COLOR_A = '#e8e8f2';
+const OC_COLOR_A = 'rgba(232, 217, 176, 0.9)';
 const OC_COLOR_B = '#8ea2ff';
 const DERIVED_ORDER = ['conflict', 'redemption', 'balance', 'resonance', 'painLink'];
 
@@ -1876,6 +1912,7 @@ const state = {
   user: null,
   ocs: [],
   activeOc: null,
+  matchA: null,
   fileText: '',
   screen: 'screen-1',
 };
@@ -1903,6 +1940,9 @@ function toast(message, type = 'ok', ms = 3400) {
 function go(id) {
   const next = $(id);
   if (!next || state.screen === id) return;
+
+  // 回到素材页：上传区一律恢复未读取状态
+  if (id === 'screen-2') resetUpload();
 
   const prev = $(state.screen);
   state.screen = id;
@@ -1934,8 +1974,7 @@ function setBusy(button, busy, busyText) {
   }
 }
 
-function readStoredKey() {
-  try {
+function readStoredKey() {  try {
     return localStorage.getItem(STORAGE_KEY) || '';
   } catch {
     return '';
@@ -1956,6 +1995,21 @@ function clearStoredKey() {
   } catch {
     /* ignore */
   }
+}
+
+/* ---------------- 上传区复位 ---------------- */
+
+function resetUpload() {
+  state.fileText = '';
+  const input = $('file-input');
+  if (input) input.value = '';
+
+  const drop = $('drop');
+  if (!drop) return;
+  drop.classList.remove('is-loaded');
+  drop.querySelector('.drop__icon').textContent = '＋';
+  drop.querySelector('.drop__text').textContent = '点击上传';
+  drop.querySelector('.drop__hint').textContent = 'UTF-8 / GB18030 / UTF-16 · ≤ 3 万字';
 }
 
 /* ---------------- 会话 ---------------- */
@@ -2047,6 +2101,24 @@ function openOc(oc) {
     span.textContent = comment;
     li.append(strong, span);
     list.appendChild(li);
+  }
+
+  // 对比下拉
+  const compareSelect = $('compare-select');
+  compareSelect.innerHTML = '';
+  const others = state.ocs.filter((item) => item.code !== oc.code);
+  if (!others.length) {
+    const option = document.createElement('option');
+    option.value = '';
+    option.textContent = '暂无可对比角色';
+    compareSelect.appendChild(option);
+  } else {
+    for (const item of others) {
+      const option = document.createElement('option');
+      option.value = item.code;
+      option.textContent = item.name;
+      compareSelect.appendChild(option);
+    }
   }
 
   go('screen-3');
@@ -2162,6 +2234,18 @@ $('btn-upload').addEventListener('click', async () => {
     fillSelects();
 
     toast(`「${oc.name}」侧写完成`);
+
+    // 从角色页点「合盘」进来：这份直接作为 B，自动跳去合盘
+    if (state.matchA && state.matchA.code !== oc.code) {
+      const pending = state.matchA;
+      state.matchA = null;
+      $('select-a').value = pending.code;
+      $('select-b').value = oc.code;
+      go('screen-4');
+      setTimeout(() => $('btn-match').click(), 460);
+      return;
+    }
+
     openOc(oc);
   } catch (error) {
     toast(error.message, 'err', 4200);
@@ -2192,6 +2276,17 @@ $('btn-import').addEventListener('click', async () => {
     fillSelects();
     $('oc-code-input').value = '';
     toast(`已导入「${data.oc.name}」`);
+
+    if (state.matchA && state.matchA.code !== data.oc.code) {
+      const pending = state.matchA;
+      state.matchA = null;
+      $('select-a').value = pending.code;
+      $('select-b').value = data.oc.code;
+      go('screen-4');
+      setTimeout(() => $('btn-match').click(), 460);
+      return;
+    }
+
     openOc(data.oc);
   } catch (error) {
     toast(error.message, 'err');
@@ -2330,18 +2425,37 @@ $('btn-open-match').addEventListener('click', () => {
 });
 
 $('btn-oc-match').addEventListener('click', () => {
-  if (state.ocs.length < 2) {
-    toast('至少先侧写两个角色，再回来合盘', 'err');
+  if (!state.activeOc) {
+    toast('先打开一个角色', 'err');
     return;
   }
-  fillSelects();
-  go('screen-4');
+
+  // 锁定当前角色为 A，直接把玩家送到输入环节
+  state.matchA = state.activeOc;
+  go('screen-2');
+  setTimeout(() => {
+    toast(`已锁定 ${state.matchA.name} 作为 A，再侧写或导入一个角色即可合盘`, 'ok', 5000);
+    $('character-input').focus();
+  }, 320);
 });
 
 $('btn-back-2').addEventListener('click', () => go('screen-2'));
 $('btn-back-3').addEventListener('click', () => {
   if (state.activeOc) openOc(state.activeOc);
   else go('screen-2');
+});
+
+$('btn-compare').addEventListener('click', () => {
+  if (!state.activeOc) return;
+
+  const other = findOc($('compare-select').value);
+  if (!other) {
+    toast('先有第二个角色才能对比', 'err');
+    return;
+  }
+
+  renderOverlayRadar($('oc-chart'), state.activeOc, other);
+  toast(`${state.activeOc.name}（实线） / ${other.name}（虚线）`, 'ok', 3000);
 });
 
 /* ---------------- 注册 / 登录 / 注销 ---------------- */
