@@ -6,7 +6,6 @@
   <meta name="theme-color" content="#07070d" />
   <title>OC 心理侧写 × CP 匹配引擎</title>
   <style>
-    /* ================= 基础布局 ================= */
     :root {
       --bg: #07070d;
       --panel: rgba(255, 255, 255, 0.035);
@@ -34,6 +33,7 @@
       -webkit-font-smoothing: antialiased;
     }
 
+    /* 网格底纹（装饰层） */
     body::before {
       content: "";
       position: fixed;
@@ -47,6 +47,8 @@
       -webkit-mask-image: radial-gradient(circle at 50% 26%, #000 0%, transparent 76%);
       mask-image: radial-gradient(circle at 50% 26%, #000 0%, transparent 76%);
     }
+
+    /* ---------- 顶部 ---------- */
 
     .site-header {
       position: relative;
@@ -80,6 +82,8 @@
       text-transform: uppercase;
     }
 
+    /* ---------- 布局 ---------- */
+
     .layout {
       position: relative;
       z-index: 1;
@@ -112,6 +116,8 @@
       color: var(--muted);
       text-transform: uppercase;
     }
+
+    /* ---------- 表单 ---------- */
 
     .field { margin-bottom: 12px; }
 
@@ -179,6 +185,8 @@
       box-shadow: 0 12px 32px rgba(255, 77, 141, 0.24);
     }
 
+    /* ---------- 密钥展示 / 分割线 / 状态 ---------- */
+
     .key-out {
       margin-top: 14px;
       padding: 12px 14px;
@@ -231,6 +239,8 @@
     .session.is-online { color: #7fe6b0; }
     .session.is-online::before { content: "● "; }
 
+    /* ---------- 上传区 ---------- */
+
     .file-drop {
       display: flex;
       flex-direction: column;
@@ -269,216 +279,255 @@
       color: var(--muted);
     }
 
+    /* ---------- 雷达图容器 ---------- */
+
+    .chart {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      height: 420px;
+      border-radius: 14px;
+      background: radial-gradient(circle at 50% 50%, rgba(139, 108, 255, 0.09), transparent 70%);
+    }
+
+    #radar-chart {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 100%;
+      height: 100%;
+    }
+
     .chart-empty {
       font-size: 13px;
       letter-spacing: 0.2em;
       color: rgba(139, 143, 168, 0.85);
     }
 
-    /* ================= 合盘交互 ================= */
-    [hidden] { display: none !important; }
-
-    .radar-stage {
-      display: grid;
-      grid-template-columns: repeat(2, minmax(0, 1fr));
-      gap: 18px;
-    }
-
-    .radar-slot {
-      padding: 14px;
-      border: 1px solid rgba(160, 170, 255, 0.14);
-      border-radius: 14px;
-      background: rgba(255, 255, 255, 0.02);
-      transform-origin: center;
-    }
-
-    .slot-title {
-      margin: 0 0 8px;
-      font-size: 12px;
-      letter-spacing: 0.16em;
-      color: rgba(139, 143, 168, 0.9);
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
-    }
-
-    .radar-canvas {
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      width: 100%;
-      height: 380px;
-      border-radius: 12px;
-      background: radial-gradient(circle at 50% 50%, rgba(139, 108, 255, 0.08), transparent 70%);
-      transform-origin: center;
-    }
-
-    .radar-canvas--derived { height: 440px; }
-
-    .match-bar {
-      display: flex;
-      align-items: center;
-      gap: 16px;
-      flex-wrap: wrap;
-      margin-top: 18px;
-    }
-
-    .match-bar .btn {
-      width: auto;
-      min-width: 180px;
-      padding-left: 28px;
-      padding-right: 28px;
-    }
-
-    .match-hint {
-      margin: 0;
-      font-size: 12px;
-      letter-spacing: 0.06em;
-      color: rgba(139, 143, 168, 0.9);
-    }
-
-    .btn-ghost {
-      width: auto;
-      margin-top: 18px;
-      padding-left: 26px;
-      padding-right: 26px;
-      background: rgba(255, 255, 255, 0.04);
-      border-color: rgba(160, 170, 255, 0.22);
-      color: rgba(232, 233, 245, 0.85);
-    }
-
-    .match-entry {
-      margin-top: 18px;
-      padding: 18px 20px;
-      border: 1px dashed rgba(255, 77, 141, 0.35);
-      border-radius: 14px;
-      background: rgba(255, 77, 141, 0.05);
-    }
-
-    .entry-title {
-      margin: 0 0 8px;
-      font-size: 20px;
-      font-weight: 700;
-      letter-spacing: 0.06em;
-      color: #ffc2d8;
-    }
-
-    .entry-desc {
-      margin: 0;
-      font-size: 13px;
-      line-height: 1.9;
-      color: rgba(232, 233, 245, 0.8);
-    }
-
-    .modal {
-      position: fixed;
-      inset: 0;
-      z-index: 50;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      padding: 24px;
-    }
-
-    .modal-backdrop {
-      position: absolute;
-      inset: 0;
-      background: rgba(4, 4, 10, 0.74);
-      -webkit-backdrop-filter: blur(6px);
-      backdrop-filter: blur(6px);
-    }
-
-    .modal-card {
-      position: relative;
-      width: min(560px, 100%);
-      padding: 24px;
-      border: 1px solid rgba(160, 170, 255, 0.2);
-      border-radius: 18px;
-      background: linear-gradient(180deg, #14131f, #0b0a14);
-      box-shadow: 0 30px 80px rgba(0, 0, 0, 0.62);
-    }
-
-    .modal-title {
-      margin: 0 0 8px;
-      font-size: 17px;
-      font-weight: 700;
-      letter-spacing: 0.06em;
-      color: #ffc2d8;
-    }
-
-    .modal-tip {
-      margin: 0 0 16px;
-      font-size: 12px;
-      line-height: 1.8;
-      color: rgba(139, 143, 168, 0.95);
-    }
-
-    .modal-textarea {
-      width: 100%;
-      min-height: 150px;
-      padding: 14px;
-      border: 1px solid rgba(160, 170, 255, 0.18);
-      border-radius: 12px;
-      background: rgba(8, 8, 16, 0.82);
-      color: #e8e9f5;
-      font-family: inherit;
-      font-size: 14px;
-      line-height: 1.75;
-      resize: vertical;
-      outline: none;
-      transition: border-color 0.18s, box-shadow 0.18s;
-    }
-
-    .modal-textarea::placeholder { color: #5b5f78; }
-
-    .modal-textarea:focus {
-      border-color: rgba(255, 77, 141, 0.6);
-      box-shadow: 0 0 0 3px rgba(255, 77, 141, 0.12);
-    }
-
-    .modal-meta {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 12px;
-      margin: 8px 0 16px;
-      font-size: 11px;
-      letter-spacing: 0.06em;
-      color: rgba(139, 143, 168, 0.9);
-    }
-
-    .modal-error { color: #ff8aa8; }
-
-    .modal-actions {
-      display: flex;
-      justify-content: flex-end;
-      gap: 12px;
-    }
-
-    .modal-actions .btn {
-      width: auto;
-      min-width: 132px;
-    }
-
-    .modal-actions .btn-ghost { margin-top: 0; }
-
-    .explode-anim {
-      transform: scale(1.2);
-      opacity: 0;
-      transition: all 0.5s ease-in-out;
-    }
+    /* ---------- 响应式 ---------- */
 
     @media (max-width: 860px) {
       .site-header { padding-top: 40px; }
       .layout { grid-template-columns: 1fr; gap: 16px; }
-      .radar-stage { grid-template-columns: 1fr; }
-      .radar-canvas { height: 320px; }
-      .radar-canvas--derived { height: 380px; }
+      .chart { height: 340px; }
     }
 
     @media (prefers-reduced-motion: reduce) {
       * { transition: none !important; }
     }
+  </style>
+  <style>
+/* public/style.css —— 合盘交互样式 */
+
+[hidden] { display: none !important; }
+
+/* ================= 双人雷达 ================= */
+
+.radar-stage {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 18px;
+}
+
+.radar-slot {
+  padding: 14px;
+  border: 1px solid rgba(160, 170, 255, 0.14);
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.02);
+  transform-origin: center;
+}
+
+.slot-title {
+  margin: 0 0 8px;
+  font-size: 12px;
+  letter-spacing: 0.16em;
+  color: rgba(139, 143, 168, 0.9);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.radar-canvas {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 380px;
+  border-radius: 12px;
+  background: radial-gradient(circle at 50% 50%, rgba(139, 108, 255, 0.08), transparent 70%);
+  transform-origin: center;
+}
+
+.radar-canvas--derived { height: 440px; }
+
+/* ================= 合盘操作条 ================= */
+
+.match-bar {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  flex-wrap: wrap;
+  margin-top: 18px;
+}
+
+.match-bar .btn {
+  width: auto;
+  min-width: 180px;
+  padding-left: 28px;
+  padding-right: 28px;
+}
+
+.match-hint {
+  margin: 0;
+  font-size: 12px;
+  letter-spacing: 0.06em;
+  color: rgba(139, 143, 168, 0.9);
+}
+
+/* 次要按钮 */
+.btn-ghost {
+  width: auto;
+  margin-top: 18px;
+  padding-left: 26px;
+  padding-right: 26px;
+  background: rgba(255, 255, 255, 0.04);
+  border-color: rgba(160, 170, 255, 0.22);
+  color: rgba(232, 233, 245, 0.85);
+}
+
+/* ================= 词条结果 ================= */
+
+.match-entry {
+  margin-top: 18px;
+  padding: 18px 20px;
+  border: 1px dashed rgba(255, 77, 141, 0.35);
+  border-radius: 14px;
+  background: rgba(255, 77, 141, 0.05);
+}
+
+.entry-title {
+  margin: 0 0 8px;
+  font-size: 20px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  color: #ffc2d8;
+}
+
+.entry-desc {
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.9;
+  color: rgba(232, 233, 245, 0.8);
+}
+
+/* ================= 反馈弹窗 ================= */
+
+.modal {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+}
+
+.modal-backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(4, 4, 10, 0.74);
+  -webkit-backdrop-filter: blur(6px);
+  backdrop-filter: blur(6px);
+}
+
+.modal-card {
+  position: relative;
+  width: min(560px, 100%);
+  padding: 24px;
+  border: 1px solid rgba(160, 170, 255, 0.2);
+  border-radius: 18px;
+  background: linear-gradient(180deg, #14131f, #0b0a14);
+  box-shadow: 0 30px 80px rgba(0, 0, 0, 0.62);
+}
+
+.modal-title {
+  margin: 0 0 8px;
+  font-size: 17px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  color: #ffc2d8;
+}
+
+.modal-tip {
+  margin: 0 0 16px;
+  font-size: 12px;
+  line-height: 1.8;
+  color: rgba(139, 143, 168, 0.95);
+}
+
+.modal-textarea {
+  width: 100%;
+  min-height: 150px;
+  padding: 14px;
+  border: 1px solid rgba(160, 170, 255, 0.18);
+  border-radius: 12px;
+  background: rgba(8, 8, 16, 0.82);
+  color: #e8e9f5;
+  font-family: inherit;
+  font-size: 14px;
+  line-height: 1.75;
+  resize: vertical;
+  outline: none;
+  transition: border-color 0.18s, box-shadow 0.18s;
+}
+
+.modal-textarea::placeholder { color: #5b5f78; }
+
+.modal-textarea:focus {
+  border-color: rgba(255, 77, 141, 0.6);
+  box-shadow: 0 0 0 3px rgba(255, 77, 141, 0.12);
+}
+
+.modal-meta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin: 8px 0 16px;
+  font-size: 11px;
+  letter-spacing: 0.06em;
+  color: rgba(139, 143, 168, 0.9);
+}
+
+.modal-error { color: #ff8aa8; }
+
+.modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+}
+
+.modal-actions .btn {
+  width: auto;
+  min-width: 132px;
+}
+
+.modal-actions .btn-ghost { margin-top: 0; }
+
+/* ================= 缩放爆炸退场动画 ================= */
+
+.explode-anim {
+  transform: scale(1.2);
+  opacity: 0;
+  transition: all 0.5s ease-in-out;
+}
+
+@media (max-width: 860px) {
+  .radar-stage { grid-template-columns: 1fr; }
+  .radar-canvas { height: 320px; }
+  .radar-canvas--derived { height: 380px; }
+}
+
   </style>
 </head>
 <body>
@@ -488,6 +537,7 @@
   </header>
 
   <main class="layout">
+    <!-- 01 注册 + 登录 -->
     <section class="panel">
       <h2>01 / 灵魂契约</h2>
 
@@ -521,8 +571,14 @@
       <button id="btn-redeem" class="btn" type="button">兑换券码（+5 虚拟币）</button>
     </section>
 
+    <!-- 02 上传 TXT -->
     <section class="panel">
       <h2>02 / 侧写素材</h2>
+
+      <div class="field">
+        <label for="character-input">这次要侧写的角色名</label>
+        <input id="character-input" type="text" maxlength="32" placeholder="例：林晚 / 阿撒兹勒" autocomplete="off" />
+      </div>
 
       <label class="file-drop" for="file-input">
         <span class="file-icon">⇪</span>
@@ -539,6 +595,7 @@
       <button id="btn-feedback-open" class="btn btn-ghost" type="button">✎ 提交反馈 · 领体验券</button>
     </section>
 
+    <!-- 03 单人雷达（两个独立容器） -->
     <section class="panel panel-chart">
       <h2>03 / 人格雷达</h2>
       <div class="radar-stage">
@@ -557,6 +614,7 @@
       </div>
     </section>
 
+    <!-- 04 合盘结果（默认隐藏） -->
     <section class="panel panel-chart" id="panel-derived" hidden>
       <h2>04 / 合盘结果</h2>
       <div id="derived-chart" class="radar-canvas radar-canvas--derived"></div>
@@ -568,6 +626,7 @@
     </section>
   </main>
 
+  <!-- 反馈弹窗 -->
   <div class="modal" id="feedback-modal" hidden>
     <div class="modal-backdrop" id="feedback-backdrop"></div>
     <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="feedback-title">
@@ -593,1284 +652,1502 @@
     </div>
   </div>
 
-  <script src="https://cdn.jsdelivr.net/npm/echarts@5.5.1/dist/echarts.min.js"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/echarts@5.5.1/dist/echarts.min.js"
+    onerror="var s=document.createElement('script');s.src='https://unpkg.com/echarts@5.5.1/dist/echarts.min.js';s.defer=true;document.head.appendChild(s);"></script>
   <script type="module">
-    /* ==================== 1. 工具层（原 utils.js）：AES + 海报 ==================== */
 
-    const SECRET = 'OC_PSYCHE_2024';
+/* ================= public/js/utils.js ================= */
+// public/js/utils.js
+// AES 混淆（CryptoJS）+ 1080×1920 Canvas 人格海报
 
-    const CRYPTOJS_ESM = 'https://cdn.jsdelivr.net/npm/crypto-js@4.2.0/+esm';
-    const CRYPTOJS_UMD = 'https://cdn.jsdelivr.net/npm/crypto-js@4.2.0/crypto-js.min.js';
+const SECRET = 'OC_PSYCHE_2024';
 
-    async function loadCryptoJS() {
-      if (globalThis.CryptoJS) return globalThis.CryptoJS;
+const CRYPTOJS_ESM = 'https://cdn.jsdelivr.net/npm/crypto-js@4.2.0/+esm';
+const CRYPTOJS_UMD = 'https://cdn.jsdelivr.net/npm/crypto-js@4.2.0/crypto-js.min.js';
 
-      try {
-        const mod = await import(CRYPTOJS_ESM);
-        const lib = (mod && mod.default) || mod;
-        if (lib && lib.AES) {
-          globalThis.CryptoJS = lib;
-          return lib;
-        }
-      } catch {
-        /* 回退到 UMD 脚本 */
-      }
+/* ================= CryptoJS 载入 ================= */
 
-      await new Promise((resolve, reject) => {
-        const script = document.createElement('script');
-        script.src = CRYPTOJS_UMD;
-        script.async = true;
-        script.onload = resolve;
-        script.onerror = () => reject(new Error('CryptoJS 加载失败，请检查网络'));
-        document.head.appendChild(script);
-      });
+async function loadCryptoJS() {
+  if (globalThis.CryptoJS) return globalThis.CryptoJS;
 
-      if (!globalThis.CryptoJS) throw new Error('CryptoJS 加载失败，请检查网络');
-      return globalThis.CryptoJS;
+  try {
+    const mod = await import(CRYPTOJS_ESM);
+    const lib = (mod && mod.default) || mod;
+    if (lib && lib.AES) {
+      globalThis.CryptoJS = lib;
+      return lib;
+    }
+  } catch {
+    /* 回退到 UMD 脚本 */
+  }
+
+  await new Promise((resolve, reject) => {
+    const script = document.createElement('script');
+    script.src = CRYPTOJS_UMD;
+    script.async = true;
+    script.onload = resolve;
+    script.onerror = () => reject(new Error('CryptoJS 加载失败，请检查网络'));
+    document.head.appendChild(script);
+  });
+
+  if (!globalThis.CryptoJS) throw new Error('CryptoJS 加载失败，请检查网络');
+  return globalThis.CryptoJS;
+}
+
+// 加载失败时不阻断整个模块图，只是暂时不可用
+let CryptoJS = globalThis.CryptoJS || null;
+
+// 后台静默加载，绝不阻塞页面交互（加密只在分享/解密时用到）
+if (!CryptoJS) {
+  loadCryptoJS()
+    .then((lib) => {
+      CryptoJS = lib;
+    })
+    .catch((error) => {
+      console.warn('[utils] CryptoJS 加载失败，加密功能暂不可用：', error && error.message);
+    });
+}
+
+function requireCrypto() {
+  if (!CryptoJS) throw new Error('CryptoJS 未就绪，请检查网络后刷新页面');
+  return CryptoJS;
+}
+
+/* ================= Base64 URL 安全编解码 ================= */
+
+// Base64 -> URL 安全：+ 换 -、/ 换 _、去掉尾部 =
+function toUrlSafe(base64) {
+  return base64.replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+}
+
+// URL 安全 -> 标准 Base64：还原字符并补回 padding
+function fromUrlSafe(value) {
+  let base64 = String(value).trim().replace(/\s+/g, '+').replace(/-/g, '+').replace(/_/g, '/');
+  while (base64.length % 4 !== 0) base64 += '=';
+  return base64;
+}
+
+/* ================= AES 混淆 ================= */
+
+/**
+ * AES 加密（对象自动 JSON 序列化），输出 URL 安全字符串，可直接拼进分享链接
+ * @param {any} data 任意可序列化数据
+ * @returns {string} URL 安全密文
+ */
+function encryptOC(data) {
+  const plain = typeof data === 'string' ? data : JSON.stringify(data ?? null);
+  const cipher = requireCrypto().AES.encrypt(plain, SECRET).toString();
+  return toUrlSafe(cipher);
+}
+
+/**
+ * AES 解密，JSON 密文返回对象，普通文本返回字符串
+ * @param {string} cipherText URL 安全密文
+ * @returns {any}
+ */
+function decryptOC(cipherText) {
+  if (typeof cipherText !== 'string' || !cipherText.trim()) {
+    throw new Error('缺少密文');
+  }
+
+  let plain;
+  try {
+    plain = requireCrypto().AES.decrypt(fromUrlSafe(cipherText), SECRET).toString(CryptoJS.enc.Utf8);
+  } catch {
+    throw new Error('解密失败：密钥不匹配或数据已损坏');
+  }
+
+  if (!plain) throw new Error('解密失败：密钥不匹配或数据已损坏');
+
+  try {
+    return JSON.parse(plain);
+  } catch {
+    return plain;
+  }
+}
+
+/* ================= 维度定义 ================= */
+
+const DIMENSION_META = [
+  { key: 'empathy', label: '共情力', en: 'EMPATHY' },
+  { key: 'order', label: '秩序感', en: 'ORDER' },
+  { key: 'intellect', label: '智谋度', en: 'INTELLECT' },
+  { key: 'vitality', label: '向阳心', en: 'VITALITY' },
+  { key: 'pride', label: '自尊感', en: 'PRIDE' },
+  { key: 'dominance', label: '支配欲', en: 'DOMINANCE' },
+  { key: 'self_destruction', label: '自毁度', en: 'SELF-DESTRUCTION' },
+  { key: 'masochism', label: '痛觉度', en: 'MASOCHISM' },
+  { key: 'obsession', label: '偏执狂', en: 'OBSESSION' },
+  { key: 'destruction', label: '破坏欲', en: 'DESTRUCTION' },
+];
+
+const CN_FONT = '"Noto Sans SC", "PingFang SC", "Microsoft YaHei", system-ui, sans-serif';
+const MONO_FONT = 'ui-monospace, Consolas, "Courier New", monospace';
+
+const CARD_WIDTH = 1080;
+const CARD_HEIGHT = 1920;
+const PADDING = 100;
+
+/* ================= 绘制工具 ================= */
+
+function clampScore(value) {
+  const num = Number(value);
+  if (!Number.isFinite(num)) return 0;
+  return Math.min(100, Math.max(0, Math.round(num)));
+}
+
+function normalizeScores(data) {
+  const source = data && typeof data.scores === 'object' && data.scores !== null ? data.scores : data || {};
+  const scores = {};
+  for (const meta of DIMENSION_META) {
+    scores[meta.key] = clampScore(source[meta.key]);
+  }
+  return scores;
+}
+
+function roundRect(ctx, x, y, width, height, radius) {
+  const r = Math.min(radius, width / 2, height / 2);
+  ctx.beginPath();
+  ctx.moveTo(x + r, y);
+  ctx.arcTo(x + width, y, x + width, y + height, r);
+  ctx.arcTo(x + width, y + height, x, y + height, r);
+  ctx.arcTo(x, y + height, x, y, r);
+  ctx.arcTo(x, y, x + width, y, r);
+  ctx.closePath();
+}
+
+function paintGlow(ctx, x, y, radius, color) {
+  const gradient = ctx.createRadialGradient(x, y, 0, x, y, radius);
+  gradient.addColorStop(0, color);
+  gradient.addColorStop(1, 'rgba(0, 0, 0, 0)');
+  ctx.fillStyle = gradient;
+  ctx.fillRect(x - radius, y - radius, radius * 2, radius * 2);
+}
+
+// 按可用宽度自动收缩字号
+function fitFontSize(ctx, text, maxWidth, startSize, weight, minSize) {
+  let size = startSize;
+  while (size > minSize) {
+    ctx.font = `${weight} ${size}px ${CN_FONT}`;
+    if (ctx.measureText(text).width <= maxWidth) break;
+    size -= 2;
+  }
+  return size;
+}
+
+function formatDate(date) {
+  const pad = (n) => String(n).padStart(2, '0');
+  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`;
+}
+
+/* ================= 海报生成 ================= */
+
+/**
+ * 生成 1080×1920 人格卡海报
+ * @param {{ name?: string, nickname?: string, scores?: object }} data
+ * @returns {string} PNG 的 dataURL，可直接赋给 img.src 或用于下载
+ */
+function generateOCCard(data = {}) {
+  const name = String(data.name || data.nickname || '无名角色').slice(0, 24);
+  const scores = normalizeScores(data);
+
+  const canvas = document.createElement('canvas');
+  canvas.width = CARD_WIDTH;
+  canvas.height = CARD_HEIGHT;
+
+  const ctx = canvas.getContext('2d');
+  if (!ctx) throw new Error('当前浏览器不支持 Canvas');
+
+  const right = CARD_WIDTH - PADDING;
+
+  /* ---------- 背景 ---------- */
+
+  const background = ctx.createLinearGradient(0, 0, 0, CARD_HEIGHT);
+  background.addColorStop(0, '#08080f');
+  background.addColorStop(0.55, '#0b0a18');
+  background.addColorStop(1, '#06060c');
+  ctx.fillStyle = background;
+  ctx.fillRect(0, 0, CARD_WIDTH, CARD_HEIGHT);
+
+  paintGlow(ctx, 200, 140, 620, 'rgba(255, 77, 141, 0.22)');
+  paintGlow(ctx, 900, 380, 560, 'rgba(77, 208, 255, 0.14)');
+  paintGlow(ctx, 540, 1760, 720, 'rgba(139, 108, 255, 0.18)');
+
+  /* ---------- 网格底纹 ---------- */
+
+  ctx.strokeStyle = 'rgba(255, 255, 255, 0.035)';
+  ctx.lineWidth = 1;
+  for (let x = 0; x <= CARD_WIDTH; x += 60) {
+    ctx.beginPath();
+    ctx.moveTo(x, 0);
+    ctx.lineTo(x, CARD_HEIGHT);
+    ctx.stroke();
+  }
+  for (let y = 0; y <= CARD_HEIGHT; y += 60) {
+    ctx.beginPath();
+    ctx.moveTo(0, y);
+    ctx.lineTo(CARD_WIDTH, y);
+    ctx.stroke();
+  }
+
+  /* ---------- 头部 ---------- */
+
+  const accent = ctx.createLinearGradient(PADDING, 0, PADDING + 170, 0);
+  accent.addColorStop(0, '#ff4d8d');
+  accent.addColorStop(1, '#8b6cff');
+  ctx.fillStyle = accent;
+  ctx.fillRect(PADDING, 118, 170, 6);
+
+  ctx.textAlign = 'left';
+  ctx.textBaseline = 'alphabetic';
+
+  ctx.fillStyle = 'rgba(232, 233, 245, 0.55)';
+  ctx.font = `500 26px ${CN_FONT}`;
+  ctx.fillText('OC PSYCHE PROFILE / 十维人格侧写', PADDING, 186);
+
+  // 角色名（超长自动缩字号）
+  const nameSize = fitFontSize(ctx, name, CARD_WIDTH - PADDING * 2, 78, '700', 40);
+  ctx.font = `700 ${nameSize}px ${CN_FONT}`;
+  ctx.fillStyle = '#ffffff';
+  ctx.fillText(name, PADDING, 302);
+
+  // 核心倾向
+  const ranked = [...DIMENSION_META].sort((a, b) => scores[b.key] - scores[a.key]);
+  const top = ranked[0];
+  ctx.font = `400 28px ${CN_FONT}`;
+  ctx.fillStyle = 'rgba(232, 233, 245, 0.62)';
+  ctx.fillText(`核心倾向：${top.label} ${scores[top.key]} / 100`, PADDING, 366);
+
+  ctx.strokeStyle = 'rgba(160, 170, 255, 0.18)';
+  ctx.lineWidth = 1;
+  ctx.beginPath();
+  ctx.moveTo(PADDING, 424);
+  ctx.lineTo(right, 424);
+  ctx.stroke();
+
+  /* ---------- 10 维进度条 ---------- */
+
+  const barX = PADDING;
+  const barWidth = right - PADDING;
+  const barHeight = 20;
+  const rowGap = 112;
+  const radius = barHeight / 2;
+
+  const barFill = ctx.createLinearGradient(barX, 0, barX + barWidth, 0);
+  barFill.addColorStop(0, '#ff4d8d');
+  barFill.addColorStop(0.6, '#8b6cff');
+  barFill.addColorStop(1, '#4dd0ff');
+
+  let rowY = 512;
+
+  for (const meta of DIMENSION_META) {
+    const value = scores[meta.key];
+
+    // 中文标签
+    ctx.textAlign = 'left';
+    ctx.font = `500 34px ${CN_FONT}`;
+    ctx.fillStyle = 'rgba(232, 233, 245, 0.94)';
+    ctx.fillText(meta.label, barX, rowY);
+    const labelWidth = ctx.measureText(meta.label).width;
+
+    // 英文小标
+    ctx.font = `400 19px ${MONO_FONT}`;
+    ctx.fillStyle = 'rgba(139, 143, 168, 0.8)';
+    ctx.fillText(meta.en, barX + labelWidth + 14, rowY - 2);
+
+    // 分值（右对齐）
+    ctx.textAlign = 'right';
+    ctx.font = `700 40px ${MONO_FONT}`;
+    ctx.fillStyle = '#ffffff';
+    ctx.fillText(String(value), right, rowY);
+    ctx.textAlign = 'left';
+
+    // 轨道
+    const trackY = rowY + 24;
+    roundRect(ctx, barX, trackY, barWidth, barHeight, radius);
+    ctx.fillStyle = 'rgba(255, 255, 255, 0.07)';
+    ctx.fill();
+
+    // 填充
+    const fillWidth = (barWidth * value) / 100;
+    if (fillWidth > 0) {
+      roundRect(ctx, barX, trackY, Math.max(fillWidth, barHeight), barHeight, radius);
+      ctx.fillStyle = barFill;
+      ctx.fill();
     }
 
-    let CryptoJS = globalThis.CryptoJS || null;
-
-    if (!CryptoJS) {
-      try {
-        CryptoJS = await loadCryptoJS();
-      } catch (error) {
-        console.warn('[utils] CryptoJS 加载失败，加密功能暂不可用：', error && error.message);
-      }
-    }
-
-    function requireCrypto() {
-      if (!CryptoJS) throw new Error('CryptoJS 未就绪，请检查网络后刷新页面');
-      return CryptoJS;
-    }
-
-    function toUrlSafe(base64) {
-      return base64.replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
-    }
-
-    function fromUrlSafe(value) {
-      let base64 = String(value).trim().replace(/\s+/g, '+').replace(/-/g, '+').replace(/_/g, '/');
-      while (base64.length % 4 !== 0) base64 += '=';
-      return base64;
-    }
-
-    function encryptOC(data) {
-      const plain = typeof data === 'string' ? data : JSON.stringify(data ?? null);
-      const cipher = requireCrypto().AES.encrypt(plain, SECRET).toString();
-      return toUrlSafe(cipher);
-    }
-
-    function decryptOC(cipherText) {
-      if (typeof cipherText !== 'string' || !cipherText.trim()) {
-        throw new Error('缺少密文');
-      }
-
-      let plain;
-      try {
-        plain = requireCrypto().AES.decrypt(fromUrlSafe(cipherText), SECRET).toString(CryptoJS.enc.Utf8);
-      } catch {
-        throw new Error('解密失败：密钥不匹配或数据已损坏');
-      }
-
-      if (!plain) throw new Error('解密失败：密钥不匹配或数据已损坏');
-
-      try {
-        return JSON.parse(plain);
-      } catch {
-        return plain;
-      }
-    }
-
-    const DIMENSION_META = [
-      { key: 'empathy', label: '共情力', en: 'EMPATHY' },
-      { key: 'order', label: '秩序感', en: 'ORDER' },
-      { key: 'intellect', label: '智谋度', en: 'INTELLECT' },
-      { key: 'vitality', label: '向阳心', en: 'VITALITY' },
-      { key: 'pride', label: '自尊感', en: 'PRIDE' },
-      { key: 'dominance', label: '支配欲', en: 'DOMINANCE' },
-      { key: 'self_destruction', label: '自毁度', en: 'SELF-DESTRUCTION' },
-      { key: 'masochism', label: '痛觉度', en: 'MASOCHISM' },
-      { key: 'obsession', label: '偏执狂', en: 'OBSESSION' },
-      { key: 'destruction', label: '破坏欲', en: 'DESTRUCTION' },
-    ];
-
-    const CN_FONT = '"Noto Sans SC", "PingFang SC", "Microsoft YaHei", system-ui, sans-serif';
-    const MONO_FONT = 'ui-monospace, Consolas, "Courier New", monospace';
-
-    const CARD_WIDTH = 1080;
-    const CARD_HEIGHT = 1920;
-    const PADDING = 100;
-
-    function clampScore(value) {
-      const num = Number(value);
-      if (!Number.isFinite(num)) return 0;
-      return Math.min(100, Math.max(0, Math.round(num)));
-    }
-
-    function normalizeScores(data) {
-      const source = data && typeof data.scores === 'object' && data.scores !== null ? data.scores : data || {};
-      const scores = {};
-      for (const meta of DIMENSION_META) {
-        scores[meta.key] = clampScore(source[meta.key]);
-      }
-      return scores;
-    }
-
-    function roundRect(ctx, x, y, width, height, radius) {
-      const r = Math.min(radius, width / 2, height / 2);
-      ctx.beginPath();
-      ctx.moveTo(x + r, y);
-      ctx.arcTo(x + width, y, x + width, y + height, r);
-      ctx.arcTo(x + width, y + height, x, y + height, r);
-      ctx.arcTo(x, y + height, x, y, r);
-      ctx.arcTo(x, y, x + width, y, r);
-      ctx.closePath();
-    }
-
-    function paintGlow(ctx, x, y, radius, color) {
-      const gradient = ctx.createRadialGradient(x, y, 0, x, y, radius);
-      gradient.addColorStop(0, color);
-      gradient.addColorStop(1, 'rgba(0, 0, 0, 0)');
-      ctx.fillStyle = gradient;
-      ctx.fillRect(x - radius, y - radius, radius * 2, radius * 2);
-    }
-
-    function fitFontSize(ctx, text, maxWidth, startSize, weight, minSize) {
-      let size = startSize;
-      while (size > minSize) {
-        ctx.font = `${weight} ${size}px ${CN_FONT}`;
-        if (ctx.measureText(text).width <= maxWidth) break;
-        size -= 2;
-      }
-      return size;
-    }
-
-    function formatDate(date) {
-      const pad = (n) => String(n).padStart(2, '0');
-      return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`;
-    }
-
-    function generateOCCard(data = {}) {
-      const name = String(data.name || data.nickname || '无名角色').slice(0, 24);
-      const scores = normalizeScores(data);
-
-      const canvas = document.createElement('canvas');
-      canvas.width = CARD_WIDTH;
-      canvas.height = CARD_HEIGHT;
-
-      const ctx = canvas.getContext('2d');
-      if (!ctx) throw new Error('当前浏览器不支持 Canvas');
-
-      const right = CARD_WIDTH - PADDING;
-
-      const background = ctx.createLinearGradient(0, 0, 0, CARD_HEIGHT);
-      background.addColorStop(0, '#08080f');
-      background.addColorStop(0.55, '#0b0a18');
-      background.addColorStop(1, '#06060c');
-      ctx.fillStyle = background;
-      ctx.fillRect(0, 0, CARD_WIDTH, CARD_HEIGHT);
-
-      paintGlow(ctx, 200, 140, 620, 'rgba(255, 77, 141, 0.22)');
-      paintGlow(ctx, 900, 380, 560, 'rgba(77, 208, 255, 0.14)');
-      paintGlow(ctx, 540, 1760, 720, 'rgba(139, 108, 255, 0.18)');
-
-      ctx.strokeStyle = 'rgba(255, 255, 255, 0.035)';
-      ctx.lineWidth = 1;
-      for (let x = 0; x <= CARD_WIDTH; x += 60) {
-        ctx.beginPath();
-        ctx.moveTo(x, 0);
-        ctx.lineTo(x, CARD_HEIGHT);
-        ctx.stroke();
-      }
-      for (let y = 0; y <= CARD_HEIGHT; y += 60) {
-        ctx.beginPath();
-        ctx.moveTo(0, y);
-        ctx.lineTo(CARD_WIDTH, y);
-        ctx.stroke();
-      }
-
-      const accent = ctx.createLinearGradient(PADDING, 0, PADDING + 170, 0);
-      accent.addColorStop(0, '#ff4d8d');
-      accent.addColorStop(1, '#8b6cff');
-      ctx.fillStyle = accent;
-      ctx.fillRect(PADDING, 118, 170, 6);
-
-      ctx.textAlign = 'left';
-      ctx.textBaseline = 'alphabetic';
-
-      ctx.fillStyle = 'rgba(232, 233, 245, 0.55)';
-      ctx.font = `500 26px ${CN_FONT}`;
-      ctx.fillText('OC PSYCHE PROFILE / 十维人格侧写', PADDING, 186);
-
-      const nameSize = fitFontSize(ctx, name, CARD_WIDTH - PADDING * 2, 78, '700', 40);
-      ctx.font = `700 ${nameSize}px ${CN_FONT}`;
-      ctx.fillStyle = '#ffffff';
-      ctx.fillText(name, PADDING, 302);
-
-      const ranked = [...DIMENSION_META].sort((a, b) => scores[b.key] - scores[a.key]);
-      const top = ranked[0];
-      ctx.font = `400 28px ${CN_FONT}`;
-      ctx.fillStyle = 'rgba(232, 233, 245, 0.62)';
-      ctx.fillText(`核心倾向：${top.label} ${scores[top.key]} / 100`, PADDING, 366);
-
-      ctx.strokeStyle = 'rgba(160, 170, 255, 0.18)';
-      ctx.lineWidth = 1;
-      ctx.beginPath();
-      ctx.moveTo(PADDING, 424);
-      ctx.lineTo(right, 424);
-      ctx.stroke();
-
-      const barX = PADDING;
-      const barWidth = right - PADDING;
-      const barHeight = 20;
-      const rowGap = 112;
-      const radius = barHeight / 2;
-
-      const barFill = ctx.createLinearGradient(barX, 0, barX + barWidth, 0);
-      barFill.addColorStop(0, '#ff4d8d');
-      barFill.addColorStop(0.6, '#8b6cff');
-      barFill.addColorStop(1, '#4dd0ff');
-
-      let rowY = 512;
-
-      for (const meta of DIMENSION_META) {
-        const value = scores[meta.key];
-
-        ctx.textAlign = 'left';
-        ctx.font = `500 34px ${CN_FONT}`;
-        ctx.fillStyle = 'rgba(232, 233, 245, 0.94)';
-        ctx.fillText(meta.label, barX, rowY);
-        const labelWidth = ctx.measureText(meta.label).width;
-
-        ctx.font = `400 19px ${MONO_FONT}`;
-        ctx.fillStyle = 'rgba(139, 143, 168, 0.8)';
-        ctx.fillText(meta.en, barX + labelWidth + 14, rowY - 2);
-
-        ctx.textAlign = 'right';
-        ctx.font = `700 40px ${MONO_FONT}`;
-        ctx.fillStyle = '#ffffff';
-        ctx.fillText(String(value), right, rowY);
-        ctx.textAlign = 'left';
-
-        const trackY = rowY + 24;
-        roundRect(ctx, barX, trackY, barWidth, barHeight, radius);
-        ctx.fillStyle = 'rgba(255, 255, 255, 0.07)';
-        ctx.fill();
-
-        const fillWidth = (barWidth * value) / 100;
-        if (fillWidth > 0) {
-          roundRect(ctx, barX, trackY, Math.max(fillWidth, barHeight), barHeight, radius);
-          ctx.fillStyle = barFill;
-          ctx.fill();
-        }
-
-        const midX = barX + barWidth / 2;
-        ctx.strokeStyle = 'rgba(255, 255, 255, 0.16)';
-        ctx.beginPath();
-        ctx.moveTo(midX, trackY - 3);
-        ctx.lineTo(midX, trackY + barHeight + 3);
-        ctx.stroke();
-
-        rowY += rowGap;
-      }
-
-      ctx.strokeStyle = 'rgba(160, 170, 255, 0.18)';
-      ctx.beginPath();
-      ctx.moveTo(PADDING, 1702);
-      ctx.lineTo(right, 1702);
-      ctx.stroke();
-
-      ctx.font = `400 24px ${CN_FONT}`;
-      ctx.fillStyle = 'rgba(139, 143, 168, 0.8)';
-      ctx.fillText(`生成于 ${formatDate(new Date())}`, PADDING, 1762);
-
-      ctx.textAlign = 'right';
-      ctx.font = `400 22px ${MONO_FONT}`;
-      ctx.fillStyle = 'rgba(160, 170, 255, 0.7)';
-      ctx.fillText('OC PSYCHE ENGINE', right, 1762);
-      ctx.textAlign = 'left';
-
-      const footer = ctx.createLinearGradient(0, 1820, CARD_WIDTH, 1820);
-      footer.addColorStop(0, 'rgba(255, 77, 141, 0)');
-      footer.addColorStop(0.5, 'rgba(255, 77, 141, 0.55)');
-      footer.addColorStop(1, 'rgba(77, 208, 255, 0)');
-      ctx.fillStyle = footer;
-      ctx.fillRect(0, 1838, CARD_WIDTH, 3);
-
-      return canvas.toDataURL('image/png');
-    }
-
-    /* ==================== 2. 合盘计算（原 scoring.js） ==================== */
-
-    const DIMENSION_KEYS = [
-      'empathy',
-      'order',
-      'intellect',
-      'vitality',
-      'pride',
-      'dominance',
-      'self_destruction',
-      'masochism',
-      'obsession',
-      'destruction',
-    ];
-
-    const DIMENSION_LABELS = {
-      empathy: '共情力',
-      order: '秩序感',
-      intellect: '智谋度',
-      vitality: '向阳心',
-      pride: '自尊感',
-      dominance: '支配欲',
-      self_destruction: '自毁度',
-      masochism: '痛觉度',
-      obsession: '偏执狂',
-      destruction: '破坏欲',
-    };
-
-    const DERIVED_META = [
-      { key: 'conflict', label: '冲突指数', en: 'CONFLICT' },
-      { key: 'redemption', label: '救赎概率', en: 'REDEMPTION' },
-      { key: 'balance', label: '掌控平衡', en: 'BALANCE' },
-      { key: 'resonance', label: '疯狂共振', en: 'RESONANCE' },
-      { key: 'painLink', label: '痛觉链接', en: 'PAIN LINK' },
-    ];
-
-    const DERIVED_KEYS = DERIVED_META.map((meta) => meta.key);
-
-    function clampValue(value) {
-      const num = Number(value);
-      if (!Number.isFinite(num)) return 0;
-      return Math.min(100, Math.max(0, num));
-    }
-
-    function toScores(source) {
-      const bag =
-        source && typeof source.scores === 'object' && source.scores !== null ? source.scores : source || {};
-      const scores = {};
-      for (const key of DIMENSION_KEYS) {
-        scores[key] = clampValue(bag[key]);
-      }
-      return scores;
-    }
-
-    function extractScores(input) {
-      return toScores(input);
-    }
-
-    function decryptProfile(token) {
-      const payload = decryptOC(token);
-      if (!payload || typeof payload !== 'object') {
-        throw new Error('数据格式不正确：缺少 10 维评分');
-      }
-      const name = String(payload.name || payload.nickname || '未命名 OC');
-      return { name, scores: toScores(payload) };
-    }
-
-    function computeConflict(a, b) {
-      const A = extractScores(a);
-      const B = extractScores(b);
-      return Math.round((A.pride + B.pride) / 2);
-    }
-
-    function computeRedemption(a, b) {
-      const A = extractScores(a);
-      const B = extractScores(b);
-      return Math.round((A.self_destruction + B.empathy) / 2);
-    }
-
-    function computeBalance(a, b) {
-      const A = extractScores(a);
-      const B = extractScores(b);
-      return Math.round(100 - Math.abs(A.dominance - B.dominance));
-    }
-
-    function computeResonance(a, b) {
-      const A = extractScores(a);
-      const B = extractScores(b);
-      return Math.round((A.destruction + B.obsession) / 2);
-    }
-
-    function computePainLink(a, b) {
-      const A = extractScores(a);
-      const B = extractScores(b);
-      return Math.round((A.masochism + B.masochism) / 2);
-    }
-
-    function computeDerived(a, b) {
-      return {
-        conflict: computeConflict(a, b),
-        redemption: computeRedemption(a, b),
-        balance: computeBalance(a, b),
-        resonance: computeResonance(a, b),
-        painLink: computePainLink(a, b),
-      };
-    }
-
-    function analyzeCouple(tokenA, tokenB) {
-      const a = decryptProfile(tokenA);
-      const b = decryptProfile(tokenB);
-      return { a, b, derived: computeDerived(a.scores, b.scores) };
-    }
-
-    /* ==================== 3. 图表（原 charts.js） ==================== */
-
-    const COLOR_A = '#ff4d8d';
-    const COLOR_B = '#4dd0ff';
-    const COLOR_DERIVED = '#8b6cff';
-
-    const FONT_FAMILY = '"Noto Sans SC", "PingFang SC", "Microsoft YaHei", system-ui, sans-serif';
-
-    const resizeBound = new WeakSet();
-
-    function resolveElement(dom) {
-      const el = typeof dom === 'string' ? document.querySelector(dom) : dom;
-      if (!el) throw new Error('图表容器不存在');
-      return el;
-    }
-
-    function toSeriesValue(scores) {
-      const bag = scores && typeof scores.scores === 'object' && scores.scores !== null ? scores.scores : scores || {};
-      return DIMENSION_KEYS.map((key) => {
-        const num = Number(bag[key]);
-        if (!Number.isFinite(num)) return 0;
-        return Math.min(100, Math.max(0, Math.round(num)));
-      });
-    }
-
-    function seriesName(input, fallback) {
-      if (input && typeof input === 'object' && (input.name || input.nickname)) {
-        return String(input.name || input.nickname);
-      }
-      return fallback;
-    }
-
-    function bindResize(el) {
-      if (resizeBound.has(el)) return;
-      resizeBound.add(el);
-      window.addEventListener('resize', () => {
-        if (typeof echarts === 'undefined') return;
-        const instance = echarts.getInstanceByDom(el);
-        if (instance) instance.resize();
-      });
-    }
-
-    function createChart(dom) {
-      if (typeof echarts === 'undefined') {
-        throw new Error('ECharts 未加载，请检查 CDN 引入');
-      }
-      const el = resolveElement(dom);
-      el.innerHTML = '';
-      const exist = echarts.getInstanceByDom(el);
-      if (exist) exist.dispose();
-
-      const chart = echarts.init(el, null, { renderer: 'canvas' });
-      bindResize(el);
-      return chart;
-    }
-
-    function baseTextStyle() {
-      return {
-        color: 'rgba(232, 233, 245, 0.85)',
+    // 50 中位刻度
+    const midX = barX + barWidth / 2;
+    ctx.strokeStyle = 'rgba(255, 255, 255, 0.16)';
+    ctx.beginPath();
+    ctx.moveTo(midX, trackY - 3);
+    ctx.lineTo(midX, trackY + barHeight + 3);
+    ctx.stroke();
+
+    rowY += rowGap;
+  }
+
+  /* ---------- 底部 ---------- */
+
+  ctx.strokeStyle = 'rgba(160, 170, 255, 0.18)';
+  ctx.beginPath();
+  ctx.moveTo(PADDING, 1702);
+  ctx.lineTo(right, 1702);
+  ctx.stroke();
+
+  ctx.font = `400 24px ${CN_FONT}`;
+  ctx.fillStyle = 'rgba(139, 143, 168, 0.8)';
+  ctx.fillText(`生成于 ${formatDate(new Date())}`, PADDING, 1762);
+
+  ctx.textAlign = 'right';
+  ctx.font = `400 22px ${MONO_FONT}`;
+  ctx.fillStyle = 'rgba(160, 170, 255, 0.7)';
+  ctx.fillText('OC PSYCHE ENGINE', right, 1762);
+  ctx.textAlign = 'left';
+
+  const footer = ctx.createLinearGradient(0, 1820, CARD_WIDTH, 1820);
+  footer.addColorStop(0, 'rgba(255, 77, 141, 0)');
+  footer.addColorStop(0.5, 'rgba(255, 77, 141, 0.55)');
+  footer.addColorStop(1, 'rgba(77, 208, 255, 0)');
+  ctx.fillStyle = footer;
+  ctx.fillRect(0, 1838, CARD_WIDTH, 3);
+
+  return canvas.toDataURL('image/png');
+}
+
+
+/* ================= public/js/scoring.js ================= */
+// public/js/scoring.js
+// 合盘核心计算：解密两个 OC 的 10 维数据，推导 5 个关系维度
+
+
+
+/* ================= 维度定义 ================= */
+
+const DIMENSION_KEYS = [
+  'empathy',
+  'order',
+  'intellect',
+  'vitality',
+  'pride',
+  'dominance',
+  'self_destruction',
+  'masochism',
+  'obsession',
+  'destruction',
+];
+
+const DIMENSION_LABELS = {
+  empathy: '共情力',
+  order: '秩序感',
+  intellect: '智谋度',
+  vitality: '向阳心',
+  pride: '自尊感',
+  dominance: '支配欲',
+  self_destruction: '自毁度',
+  masochism: '痛觉度',
+  obsession: '偏执狂',
+  destruction: '破坏欲',
+};
+
+// 5 个衍生维度（合盘结果）
+const DERIVED_META = [
+  { key: 'conflict', label: '冲突指数', en: 'CONFLICT' },
+  { key: 'redemption', label: '救赎概率', en: 'REDEMPTION' },
+  { key: 'balance', label: '掌控平衡', en: 'BALANCE' },
+  { key: 'resonance', label: '疯狂共振', en: 'RESONANCE' },
+  { key: 'painLink', label: '痛觉链接', en: 'PAIN LINK' },
+];
+
+const DERIVED_KEYS = DERIVED_META.map((meta) => meta.key);
+
+/* ================= 数据提取 ================= */
+
+function clampValue(value) {
+  const num = Number(value);
+  if (!Number.isFinite(num)) return 0;
+  return Math.min(100, Math.max(0, num));
+}
+
+// 兼容 { scores: {...} } 与直接传入维度对象两种形态
+function toScores(source) {
+  const bag =
+    source && typeof source.scores === 'object' && source.scores !== null ? source.scores : source || {};
+  const scores = {};
+  for (const key of DIMENSION_KEYS) {
+    scores[key] = clampValue(bag[key]);
+  }
+  return scores;
+}
+
+/**
+ * 从任意载体中提取标准 10 维对象（0-100 数值，不做取整，保留精度参与计算）
+ */
+function extractScores(input) {
+  return toScores(input);
+}
+
+/**
+ * 解密单个 OC 数据
+ * @param {string} token encryptOC 产出的 URL 安全密文
+ * @returns {{ name: string, scores: object }}
+ */
+function decryptProfile(token) {
+  const payload = decryptOC(token);
+  if (!payload || typeof payload !== 'object') {
+    throw new Error('数据格式不正确：缺少 10 维评分');
+  }
+  const name = String(payload.name || payload.nickname || '未命名 OC');
+  return { name, scores: toScores(payload) };
+}
+
+/* ================= 5 个衍生维度（结果取整） ================= */
+
+// 冲突指数 = (A.pride + B.pride) / 2
+function computeConflict(a, b) {
+  const A = extractScores(a);
+  const B = extractScores(b);
+  return Math.round((A.pride + B.pride) / 2);
+}
+
+// 救赎概率 = (A.self_destruction + B.empathy) / 2
+function computeRedemption(a, b) {
+  const A = extractScores(a);
+  const B = extractScores(b);
+  return Math.round((A.self_destruction + B.empathy) / 2);
+}
+
+// 掌控平衡 = 100 - Math.abs(A.dominance - B.dominance)
+function computeBalance(a, b) {
+  const A = extractScores(a);
+  const B = extractScores(b);
+  return Math.round(100 - Math.abs(A.dominance - B.dominance));
+}
+
+// 疯狂共振 = (A.destruction + B.obsession) / 2
+function computeResonance(a, b) {
+  const A = extractScores(a);
+  const B = extractScores(b);
+  return Math.round((A.destruction + B.obsession) / 2);
+}
+
+// 痛觉链接 = (A.masochism + B.masochism) / 2
+function computePainLink(a, b) {
+  const A = extractScores(a);
+  const B = extractScores(b);
+  return Math.round((A.masochism + B.masochism) / 2);
+}
+
+/**
+ * 一次性推导全部 5 个衍生维度
+ * @returns {{ conflict:number, redemption:number, balance:number, resonance:number, painLink:number }}
+ */
+function computeDerived(a, b) {
+  return {
+    conflict: computeConflict(a, b),
+    redemption: computeRedemption(a, b),
+    balance: computeBalance(a, b),
+    resonance: computeResonance(a, b),
+    painLink: computePainLink(a, b),
+  };
+}
+
+/**
+ * 合盘主流程：解密 A/B 密文 -> 提取 10 维 -> 计算 5 个衍生维度
+ * @param {string} tokenA OC1 密文
+ * @param {string} tokenB OC2 密文
+ */
+function analyzeCouple(tokenA, tokenB) {
+  const a = decryptProfile(tokenA);
+  const b = decryptProfile(tokenB);
+  return { a, b, derived: computeDerived(a.scores, b.scores) };
+}
+
+
+/* ================= public/js/charts.js ================= */
+// public/js/charts.js
+// ECharts 封装：双人叠加雷达（10 维）+ 合盘衍生雷达（5 维）
+
+
+
+const COLOR_A = '#ff4d8d'; // OC1 实线
+const COLOR_B = '#4dd0ff'; // OC2 虚线
+const COLOR_DERIVED = '#8b6cff';
+
+const FONT_FAMILY = '"Noto Sans SC", "PingFang SC", "Microsoft YaHei", system-ui, sans-serif';
+
+// 已绑定 resize 的容器，避免重复监听
+const resizeBound = new WeakSet();
+
+/* ================= 通用工具 ================= */
+
+function resolveElement(dom) {
+  const el = typeof dom === 'string' ? document.querySelector(dom) : dom;
+  if (!el) throw new Error('图表容器不存在');
+  return el;
+}
+
+function toSeriesValue(scores) {
+  const bag = scores && typeof scores.scores === 'object' && scores.scores !== null ? scores.scores : scores || {};
+  return DIMENSION_KEYS.map((key) => {
+    const num = Number(bag[key]);
+    if (!Number.isFinite(num)) return 0;
+    return Math.min(100, Math.max(0, Math.round(num)));
+  });
+}
+
+function seriesName(input, fallback) {
+  if (input && typeof input === 'object' && (input.name || input.nickname)) {
+    return String(input.name || input.nickname);
+  }
+  return fallback;
+}
+
+function bindResize(el) {
+  if (resizeBound.has(el)) return;
+  resizeBound.add(el);
+  window.addEventListener('resize', () => {
+    if (typeof echarts === 'undefined') return;
+    const instance = echarts.getInstanceByDom(el);
+    if (instance) instance.resize();
+  });
+}
+
+function createChart(dom) {
+  if (typeof echarts === 'undefined') {
+    throw new Error('ECharts 未加载，请检查 CDN 引入');
+  }
+  const el = resolveElement(dom);
+  el.innerHTML = ''; // 清掉占位文案
+  const exist = echarts.getInstanceByDom(el);
+  if (exist) exist.dispose();
+
+  const chart = echarts.init(el, null, { renderer: 'canvas' });
+  bindResize(el);
+  return chart;
+}
+
+function baseTextStyle() {
+  return {
+    color: 'rgba(232, 233, 245, 0.85)',
+    fontFamily: FONT_FAMILY,
+  };
+}
+
+function baseTooltip() {
+  return {
+    trigger: 'item',
+    backgroundColor: 'rgba(10, 10, 20, 0.92)',
+    borderColor: 'rgba(160, 170, 255, 0.25)',
+    borderWidth: 1,
+    textStyle: { color: '#e8e9f5', fontSize: 12, fontFamily: FONT_FAMILY },
+  };
+}
+
+/* ================= 10 维叠加雷达 ================= */
+
+/**
+ * OC1 实线 + OC2 虚线（50% 透明）的 10 维叠加雷达
+ * @param {HTMLElement|string} dom 容器或选择器
+ * @param {object} dataA { name, scores } 或直接 { empathy: 80, ... }
+ * @param {object} dataB 同上
+ * @returns {object} ECharts 实例
+ */
+function renderOverlayRadar(dom, dataA, dataB) {
+  const chart = createChart(dom);
+
+  const indicator = DIMENSION_KEYS.map((key) => ({ name: DIMENSION_LABELS[key], max: 100 }));
+  const nameA = seriesName(dataA, 'OC 1');
+  const nameB = seriesName(dataB, 'OC 2');
+
+  const option = {
+    textStyle: baseTextStyle(),
+    tooltip: baseTooltip(),
+    legend: {
+      bottom: 6,
+      itemGap: 22,
+      itemWidth: 20,
+      itemHeight: 10,
+      textStyle: { color: 'rgba(232, 233, 245, 0.85)', fontSize: 12, fontFamily: FONT_FAMILY },
+      data: [nameA, nameB],
+    },
+    radar: {
+      center: ['50%', '47%'],
+      radius: '60%',
+      splitNumber: 4,
+      indicator,
+      axisName: {
+        color: 'rgba(232, 233, 245, 0.72)',
+        fontSize: 12,
         fontFamily: FONT_FAMILY,
-      };
-    }
-
-    function baseTooltip() {
-      return {
-        trigger: 'item',
-        backgroundColor: 'rgba(10, 10, 20, 0.92)',
-        borderColor: 'rgba(160, 170, 255, 0.25)',
-        borderWidth: 1,
-        textStyle: { color: '#e8e9f5', fontSize: 12, fontFamily: FONT_FAMILY },
-      };
-    }
-
-    function renderOverlayRadar(dom, dataA, dataB) {
-      const chart = createChart(dom);
-
-      const indicator = DIMENSION_KEYS.map((key) => ({ name: DIMENSION_LABELS[key], max: 100 }));
-      const nameA = seriesName(dataA, 'OC 1');
-      const nameB = seriesName(dataB, 'OC 2');
-
-      const option = {
-        textStyle: baseTextStyle(),
-        tooltip: baseTooltip(),
-        legend: {
-          bottom: 6,
-          itemGap: 22,
-          itemWidth: 20,
-          itemHeight: 10,
-          textStyle: { color: 'rgba(232, 233, 245, 0.85)', fontSize: 12, fontFamily: FONT_FAMILY },
-          data: [nameA, nameB],
+      },
+      splitLine: { lineStyle: { color: 'rgba(160, 170, 255, 0.18)' } },
+      axisLine: { lineStyle: { color: 'rgba(160, 170, 255, 0.22)' } },
+      splitArea: {
+        areaStyle: {
+          color: ['rgba(139, 108, 255, 0.045)', 'rgba(139, 108, 255, 0.012)'],
         },
-        radar: {
-          center: ['50%', '47%'],
-          radius: '60%',
-          splitNumber: 4,
-          indicator,
-          axisName: {
-            color: 'rgba(232, 233, 245, 0.72)',
-            fontSize: 12,
-            fontFamily: FONT_FAMILY,
+      },
+    },
+    series: [
+      {
+        type: 'radar',
+        symbolSize: 5,
+        data: [
+          {
+            name: nameA,
+            value: toSeriesValue(dataA),
+            lineStyle: { width: 2.5, color: COLOR_A },
+            itemStyle: { color: COLOR_A },
+            areaStyle: { color: 'rgba(255, 77, 141, 0.20)' },
           },
-          splitLine: { lineStyle: { color: 'rgba(160, 170, 255, 0.18)' } },
-          axisLine: { lineStyle: { color: 'rgba(160, 170, 255, 0.22)' } },
-          splitArea: {
-            areaStyle: {
-              color: ['rgba(139, 108, 255, 0.045)', 'rgba(139, 108, 255, 0.012)'],
+          {
+            name: nameB,
+            value: toSeriesValue(dataB),
+            // 虚线 + 50% 透明度
+            lineStyle: { width: 2, type: 'dashed', color: 'rgba(77, 208, 255, 0.5)' },
+            itemStyle: { color: 'rgba(77, 208, 255, 0.5)' },
+            areaStyle: { color: 'rgba(77, 208, 255, 0.08)' },
+          },
+        ],
+      },
+    ],
+  };
+
+  chart.setOption(option, true);
+  return chart;
+}
+
+/* ================= 5 维衍生雷达 ================= */
+
+/**
+ * 合盘衍生维度雷达（冲突指数 / 救赎概率 / 掌控平衡 / 疯狂共振 / 痛觉链接）
+ * @param {HTMLElement|string} dom 容器或选择器
+ * @param {object} derivedData { conflict, redemption, balance, resonance, painLink }，
+ *                             也接受 analyzeCouple() 返回的 { derived } 结构
+ * @returns {object} ECharts 实例
+ */
+function renderDerivedRadar(dom, derivedData) {
+  const chart = createChart(dom);
+
+  const values =
+    derivedData && derivedData.derived && typeof derivedData.derived === 'object'
+      ? derivedData.derived
+      : derivedData || {};
+
+  const indicator = DERIVED_META.map((meta) => ({ name: meta.label, max: 100 }));
+  const data = DERIVED_META.map((meta) => {
+    const num = Number(values[meta.key]);
+    if (!Number.isFinite(num)) return 0;
+    return Math.min(100, Math.max(0, Math.round(num)));
+  });
+
+  const option = {
+    textStyle: baseTextStyle(),
+    tooltip: baseTooltip(),
+    radar: {
+      center: ['50%', '52%'],
+      radius: '62%',
+      splitNumber: 4,
+      indicator,
+      axisName: {
+        color: 'rgba(232, 233, 245, 0.72)',
+        fontSize: 12,
+        fontFamily: FONT_FAMILY,
+      },
+      splitLine: { lineStyle: { color: 'rgba(160, 170, 255, 0.18)' } },
+      axisLine: { lineStyle: { color: 'rgba(160, 170, 255, 0.22)' } },
+      splitArea: {
+        areaStyle: {
+          color: ['rgba(139, 108, 255, 0.05)', 'rgba(139, 108, 255, 0.012)'],
+        },
+      },
+    },
+    series: [
+      {
+        type: 'radar',
+        symbol: 'diamond',
+        symbolSize: 7,
+        data: [
+          {
+            name: '合盘结果',
+            value: data,
+            lineStyle: { width: 2.5, color: COLOR_DERIVED },
+            itemStyle: { color: '#c0b0ff', borderColor: COLOR_DERIVED, borderWidth: 1 },
+            areaStyle: { color: 'rgba(139, 108, 255, 0.26)' },
+            label: {
+              show: true,
+              color: '#e8e9f5',
+              fontSize: 11,
+              fontFamily: FONT_FAMILY,
+              formatter: (params) => params.value,
             },
           },
-        },
-        series: [
+        ],
+      },
+    ],
+  };
+
+  chart.setOption(option, true);
+  return chart;
+}
+
+/* ================= 单人 10 维雷达 ================= */
+
+function withAlpha(hex, alpha) {
+  const value = String(hex).replace('#', '');
+  const full = value.length === 3 ? value.split('').map((c) => c + c).join('') : value;
+  const r = parseInt(full.slice(0, 2), 16) || 0;
+  const g = parseInt(full.slice(2, 4), 16) || 0;
+  const b = parseInt(full.slice(4, 6), 16) || 0;
+  return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+}
+
+/**
+ * 单 OC 的 10 维雷达
+ * @param {HTMLElement|string} dom 容器
+ * @param {{ name?: string, scores: object }} data
+ * @param {string} [color] 主题色
+ * @returns {object} ECharts 实例
+ */
+function renderOCRadar(dom, data, color = COLOR_A) {
+  const chart = createChart(dom);
+
+  const indicator = DIMENSION_KEYS.map((key) => ({ name: DIMENSION_LABELS[key], max: 100 }));
+
+  const option = {
+    textStyle: baseTextStyle(),
+    tooltip: baseTooltip(),
+    radar: {
+      center: ['50%', '50%'],
+      radius: '64%',
+      splitNumber: 4,
+      indicator,
+      axisName: {
+        color: 'rgba(232, 233, 245, 0.7)',
+        fontSize: 11,
+        fontFamily: FONT_FAMILY,
+      },
+      splitLine: { lineStyle: { color: 'rgba(160, 170, 255, 0.18)' } },
+      axisLine: { lineStyle: { color: 'rgba(160, 170, 255, 0.22)' } },
+      splitArea: {
+        areaStyle: { color: ['rgba(139, 108, 255, 0.045)', 'rgba(139, 108, 255, 0.012)'] },
+      },
+    },
+    series: [
+      {
+        type: 'radar',
+        symbolSize: 5,
+        data: [
           {
-            type: 'radar',
-            symbolSize: 5,
-            data: [
-              {
-                name: nameA,
-                value: toSeriesValue(dataA),
-                lineStyle: { width: 2.5, color: COLOR_A },
-                itemStyle: { color: COLOR_A },
-                areaStyle: { color: 'rgba(255, 77, 141, 0.20)' },
-              },
-              {
-                name: nameB,
-                value: toSeriesValue(dataB),
-                lineStyle: { width: 2, type: 'dashed', color: 'rgba(77, 208, 255, 0.5)' },
-                itemStyle: { color: 'rgba(77, 208, 255, 0.5)' },
-                areaStyle: { color: 'rgba(77, 208, 255, 0.08)' },
-              },
-            ],
+            name: seriesName(data, 'OC'),
+            value: toSeriesValue(data),
+            lineStyle: { width: 2.5, color },
+            itemStyle: { color },
+            areaStyle: { color: withAlpha(color, 0.18) },
           },
         ],
-      };
+      },
+    ],
+  };
 
-      chart.setOption(option, true);
-      return chart;
-    }
+  chart.setOption(option, true);
+  return chart;
+}
 
-    function renderDerivedRadar(dom, derivedData) {
-      const chart = createChart(dom);
 
-      const values =
-        derivedData && derivedData.derived && typeof derivedData.derived === 'object'
-          ? derivedData.derived
-          : derivedData || {};
+/* ================= public/js/api.js ================= */
+// public/js/api.js
+// 与 Worker 的唯一通信层
 
-      const indicator = DERIVED_META.map((meta) => ({ name: meta.label, max: 100 }));
-      const data = DERIVED_META.map((meta) => {
-        const num = Number(values[meta.key]);
-        if (!Number.isFinite(num)) return 0;
-        return Math.min(100, Math.max(0, Math.round(num)));
-      });
+// ⚠️ 必改：替换为你部署后的 Worker 域名（末尾不要带斜杠），例如 https://oc-cp-engine.yourname.workers.dev
+// 仍是占位符时，页面第一次发请求就会明确提示「尚未配置 Worker 域名」。
+const API_BASE = 'https://oc-api.2717842196-c7d.workers.dev'; // TODO: 替换为真实 Worker 域名
 
-      const option = {
-        textStyle: baseTextStyle(),
-        tooltip: baseTooltip(),
-        radar: {
-          center: ['50%', '52%'],
-          radius: '62%',
-          splitNumber: 4,
-          indicator,
-          axisName: {
-            color: 'rgba(232, 233, 245, 0.72)',
-            fontSize: 12,
-            fontFamily: FONT_FAMILY,
-          },
-          splitLine: { lineStyle: { color: 'rgba(160, 170, 255, 0.18)' } },
-          axisLine: { lineStyle: { color: 'rgba(160, 170, 255, 0.22)' } },
-          splitArea: {
-            areaStyle: {
-              color: ['rgba(139, 108, 255, 0.05)', 'rgba(139, 108, 255, 0.012)'],
-            },
-          },
-        },
-        series: [
-          {
-            type: 'radar',
-            symbol: 'diamond',
-            symbolSize: 7,
-            data: [
-              {
-                name: '合盘结果',
-                value: data,
-                lineStyle: { width: 2.5, color: COLOR_DERIVED },
-                itemStyle: { color: '#c0b0ff', borderColor: COLOR_DERIVED, borderWidth: 1 },
-                areaStyle: { color: 'rgba(139, 108, 255, 0.26)' },
-                label: {
-                  show: true,
-                  color: '#e8e9f5',
-                  fontSize: 11,
-                  fontFamily: FONT_FAMILY,
-                  formatter: (params) => params.value,
-                },
-              },
-            ],
-          },
-        ],
-      };
+const DEFAULT_TIMEOUT = 20000;
 
-      chart.setOption(option, true);
-      return chart;
-    }
+/**
+ * 统一请求封装
+ * 后端约定：成功 { ok: true, data } / 失败 { ok: false, error: { code, message } }
+ * @param {string} path 例如 '/api/auth'
+ * @param {{ method?: string, body?: any, headers?: object, timeout?: number }} options
+ * @returns {Promise<any>} 解析后的 data
+ */
+async function request(path, options = {}) {
+  const { method = 'GET', body, headers = {}, timeout = DEFAULT_TIMEOUT } = options;
+  const url = `${API_BASE}${path}`;
 
-    function withAlpha(hex, alpha) {
-      const value = String(hex).replace('#', '');
-      const full = value.length === 3 ? value.split('').map((c) => c + c).join('') : value;
-      const r = parseInt(full.slice(0, 2), 16) || 0;
-      const g = parseInt(full.slice(2, 4), 16) || 0;
-      const b = parseInt(full.slice(4, 6), 16) || 0;
-      return `rgba(${r}, ${g}, ${b}, ${alpha})`;
-    }
+  if (!API_BASE || API_BASE.includes('你的Worker域名') || !/^https?:\/\//.test(API_BASE)) {
+    throw new Error('尚未配置 Worker 域名：请打开 public/js/api.js，把 API_BASE 改成你的 Worker 地址');
+  }
 
-    function renderOCRadar(dom, data, color = COLOR_A) {
-      const chart = createChart(dom);
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), timeout);
 
-      const indicator = DIMENSION_KEYS.map((key) => ({ name: DIMENSION_LABELS[key], max: 100 }));
-
-      const option = {
-        textStyle: baseTextStyle(),
-        tooltip: baseTooltip(),
-        radar: {
-          center: ['50%', '50%'],
-          radius: '64%',
-          splitNumber: 4,
-          indicator,
-          axisName: {
-            color: 'rgba(232, 233, 245, 0.7)',
-            fontSize: 11,
-            fontFamily: FONT_FAMILY,
-          },
-          splitLine: { lineStyle: { color: 'rgba(160, 170, 255, 0.18)' } },
-          axisLine: { lineStyle: { color: 'rgba(160, 170, 255, 0.22)' } },
-          splitArea: {
-            areaStyle: { color: ['rgba(139, 108, 255, 0.045)', 'rgba(139, 108, 255, 0.012)'] },
-          },
-        },
-        series: [
-          {
-            type: 'radar',
-            symbolSize: 5,
-            data: [
-              {
-                name: seriesName(data, 'OC'),
-                value: toSeriesValue(data),
-                lineStyle: { width: 2.5, color },
-                itemStyle: { color },
-                areaStyle: { color: withAlpha(color, 0.18) },
-              },
-            ],
-          },
-        ],
-      };
-
-      chart.setOption(option, true);
-      return chart;
-    }
-
-    /* ==================== 4. 接口层（原 api.js） ==================== */
-
-    // ⚠️ 必改：替换为你部署后的 Worker 域名（末尾不要带斜杠）
-    const API_BASE = 'https://oc-api.2717842196-c7d.workers.dev'; // TODO: 替换为真实 Worker 域名
-
-    const DEFAULT_TIMEOUT = 60000;
-
-    async function request(path, options = {}) {
-      const { method = 'GET', body, headers = {}, timeout = DEFAULT_TIMEOUT } = options;
-      const url = `${API_BASE}${path}`;
-
-      if (!API_BASE || API_BASE.includes('你的Worker域名') || !/^https?:\/\//.test(API_BASE)) {
-        throw new Error('尚未配置 Worker 域名：请把文件里的 API_BASE 改成你的 Worker 地址');
-      }
-
-      const controller = new AbortController();
-      const timer = setTimeout(() => controller.abort(), timeout);
-
-      try {
-        const init = {
-          method,
-          headers: {
-            Accept: 'application/json',
-            ...(body !== undefined ? { 'Content-Type': 'application/json' } : {}),
-            ...headers,
-          },
-          signal: controller.signal,
-        };
-        if (body !== undefined) init.body = JSON.stringify(body);
-
-        const response = await fetch(url, init);
-
-        let payload = null;
-        try {
-          payload = await response.json();
-        } catch {
-          payload = null;
-        }
-
-        if (payload && payload.ok === true) {
-          return payload.data;
-        }
-
-        const message =
-          (payload && payload.error && payload.error.message) || `请求失败（HTTP ${response.status}）`;
-        const error = new Error(message);
-        error.code = (payload && payload.error && payload.error.code) || 'REQUEST_FAILED';
-        error.status = response.status;
-        throw error;
-      } catch (error) {
-        if (error && error.name === 'AbortError') {
-          throw new Error('请求超时，请检查网络后重试');
-        }
-        if (error instanceof TypeError) {
-          throw new Error('无法连接服务器，请检查 API_BASE 是否正确');
-        }
-        throw error;
-      } finally {
-        clearTimeout(timer);
-      }
-    }
-
-    function auth(nickname) {
-      return request('/api/auth', { method: 'POST', body: { nickname } });
-    }
-
-    function login(key) {
-      return request('/api/login', { method: 'POST', body: { key } });
-    }
-
-    function parseText(key, text) {
-      return request('/api/parse', {
-        method: 'POST',
-        body: { key, text },
-        timeout: 180000,
-      });
-    }
-
-    function feedback(key, text) {
-      return request('/api/feedback', { method: 'POST', body: { key, text }, timeout: 30000 });
-    }
-
-    function useCoupon(key, coupon) {
-      return request('/api/use-coupon', { method: 'POST', body: { key, coupon } });
-    }
-
-    /* ==================== 5. 页面逻辑（原 main.js） ==================== */
-
-    const STORAGE_KEY = 'oc_engine_key';
-    const TEXT_LIMIT = 30000;
-    const EXPLODE_MS = 520;
-    const SLOT_COLORS = { a: '#ff4d8d', b: '#4dd0ff' };
-    const DERIVED_ORDER = ['conflict', 'redemption', 'balance', 'resonance', 'painLink'];
-
-    const MATCH_ENTRIES = {
-      conflict: [
-        {
-          title: '《深渊神明与灭世魔王》',
-          desc: '两个都不肯低头的人站在同一片废墟上，谁先开口谁就先认输；所以你们只好先把彼此按进灰烬里，再谈喜欢。',
-        },
-        {
-          title: '《双王座之上》',
-          desc: '王座只有一张，而你们都认为自己该坐。最终的和解方式是把世界关在门外，两个人挤在同一张椅子上互相撕咬。',
-        },
-      ],
-      redemption: [
-        {
-          title: '《弑神者的最后一次宽恕》',
-          desc: '他本该毁掉一切，却在某个人读懂他之前迟疑了一秒。就这一秒，整座城市活了下来，他也活了下来。',
-        },
-        {
-          title: '《坠落天使的黎明》',
-          desc: '你向下坠时有人伸出手，掌心被你的碎骨划得鲜血淋漓也没有松开。从此黑夜第一次有了破晓的理由。',
-        },
-      ],
-      balance: [
-        {
-          title: '《双生棋局》',
-          desc: '势均力敌的两个人互相试探、互相让步，谁也没赢，可谁也没输——这大概是宿命能给出的最好结局。',
-        },
-        {
-          title: '《天平两端》',
-          desc: '一人执刀，一人执秤。每一次靠近都要重新校准重量，而你们居然乐意把余生耗在这个动作上。',
-        },
-      ],
-      resonance: [
-        {
-          title: '《疯狂共鸣曲》',
-          desc: '一个想毁掉世界，一个只想着他。两种疯狂拼在一起竟然严丝合缝，连旁观者都分不清谁在纵容谁。',
-        },
-        {
-          title: '《共犯者的夜曲》',
-          desc: '不需要理由的默契：你说要放火，我已经在找打火机。世界的规则在你们之间失效得毫无阻力。',
-        },
-      ],
-      painLink: [
-        {
-          title: '《以痛为契》',
-          desc: '疼是你们之间唯一诚实的语言。谁先喊停，谁就先承认自己舍不得——而你们谁都不会先喊。',
-        },
-        {
-          title: '《伤痕契约》',
-          desc: '你身上的每一道旧伤他都能准确说出位置，那是比誓言更牢的契约：以血肉为印，以余生日日履行。',
-        },
-      ],
+  try {
+    const init = {
+      method,
+      headers: {
+        Accept: 'application/json',
+        ...(body !== undefined ? { 'Content-Type': 'application/json' } : {}),
+        ...headers,
+      },
+      signal: controller.signal,
     };
+    if (body !== undefined) init.body = JSON.stringify(body);
 
-    const nodes = {
-      nicknameInput: document.getElementById('nickname-input'),
-      registerBtn: document.getElementById('btn-register'),
-      registerKey: document.getElementById('register-key'),
-      keyInput: document.getElementById('key-input'),
-      loginBtn: document.getElementById('btn-login'),
-      session: document.getElementById('session-status'),
-      fileInput: document.getElementById('file-input'),
-      fileName: document.getElementById('file-name'),
-      uploadBtn: document.getElementById('btn-upload'),
-      matchBtn: document.getElementById('btn-match'),
-      matchHint: document.getElementById('match-hint'),
-      resetBtn: document.getElementById('btn-reset'),
-      derivedPanel: document.getElementById('panel-derived'),
-      derivedChart: document.getElementById('derived-chart'),
-      entryTitle: document.getElementById('entry-title'),
-      entryDesc: document.getElementById('entry-desc'),
-      couponInput: document.getElementById('coupon-input'),
-      redeemBtn: document.getElementById('btn-redeem'),
-      feedbackOpenBtn: document.getElementById('btn-feedback-open'),
-      feedbackModal: document.getElementById('feedback-modal'),
-      feedbackBackdrop: document.getElementById('feedback-backdrop'),
-      feedbackText: document.getElementById('feedback-text'),
-      feedbackCount: document.getElementById('feedback-count'),
-      feedbackError: document.getElementById('feedback-error'),
-      feedbackSubmitBtn: document.getElementById('btn-feedback-submit'),
-      feedbackCancelBtn: document.getElementById('btn-feedback-cancel'),
-    };
+    const response = await fetch(url, init);
 
-    const radarNodes = {
-      a: document.getElementById('radar-chart-a'),
-      b: document.getElementById('radar-chart-b'),
-    };
-
-    const slotTitleNodes = {
-      a: document.getElementById('slot-title-a'),
-      b: document.getElementById('slot-title-b'),
-    };
-
-    const state = {
-      key: '',
-      text: '',
-      fileName: '',
-      user: null,
-      profiles: { a: null, b: null },
-    };
-
-    const wait = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
-
-    function readStoredKey() {
-      try {
-        return localStorage.getItem(STORAGE_KEY) || '';
-      } catch {
-        return '';
-      }
+    let payload = null;
+    try {
+      payload = await response.json();
+    } catch {
+      payload = null;
     }
 
-    function writeStoredKey(key) {
-      try {
-        localStorage.setItem(STORAGE_KEY, key);
-      } catch {
-        /* ignore */
-      }
+    if (payload && payload.ok === true) {
+      return payload.data;
     }
 
-    function clearStoredKey() {
-      try {
-        localStorage.removeItem(STORAGE_KEY);
-      } catch {
-        /* ignore */
-      }
+    // 失败：抛出后端返回的 message
+    const message =
+      (payload && payload.error && payload.error.message) || `请求失败（HTTP ${response.status}）`;
+    const error = new Error(message);
+    error.code = (payload && payload.error && payload.error.code) || 'REQUEST_FAILED';
+    error.status = response.status;
+    throw error;
+  } catch (error) {
+    if (error && error.name === 'AbortError') {
+      throw new Error('请求超时，请检查网络后重试');
+    }
+    if (error instanceof TypeError) {
+      throw new Error('无法连接服务器，请检查 api.js 中的 API_BASE 是否正确');
+    }
+    throw error;
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
+/**
+ * 签定灵魂契约
+ * @param {string} nickname 昵称
+ * @returns {Promise<{ key: string, user: object }>}
+ */
+function auth(nickname) {
+  return request('/api/auth', { method: 'POST', body: { nickname } });
+}
+
+/**
+ * 使用密钥登录
+ * @param {string} key KEY-XXXX-XXXX
+ * @returns {Promise<{ key: string, user: object }>}
+ */
+function login(key) {
+  return request('/api/login', { method: 'POST', body: { key } });
+}
+
+/**
+ * 提交文本进行 10 维侧写
+ * @param {string} key 灵魂契约密钥
+ * @param {string} text 角色文本
+ * @returns {Promise<{ scores: object, cost: number, balance: number, model: string }>}
+ */
+function parseText(key, text, name) {
+  return request('/api/parse', {
+    method: 'POST',
+    body: { key, text, name },
+    timeout: 180000, // reasoner 推理可能较慢
+  });
+}
+
+/**
+ * 提交反馈，成功后返回体验券
+ * @param {string} key 灵魂契约密钥
+ * @param {string} text 20-200 字反馈
+ * @returns {Promise<{ coupon: string, coupons: string[], balance: number }>}
+ */
+function feedback(key, text) {
+  return request('/api/feedback', { method: 'POST', body: { key, text }, timeout: 30000 });
+}
+
+/**
+ * 兑换体验券
+ * @param {string} key 灵魂契约密钥
+ * @param {string} coupon 形如 VIP-XXXX
+ * @returns {Promise<{ coupon: string, coupons: string[], balance: number, reward: number }>}
+ */
+function useCoupon(key, coupon) {
+  return request('/api/use-coupon', { method: 'POST', body: { key, coupon } });
+}
+
+
+/* ================= public/js/main.js ================= */
+// public/js/main.js
+// 页面交互：签定契约 / 登录 / 上传 TXT 侧写 / 双人合盘
+
+
+
+
+
+const STORAGE_KEY = 'oc_engine_key';
+const TEXT_LIMIT = 30000;
+const EXPLODE_MS = 520; // 与 style.css 的 transition 时长对齐
+const SLOT_COLORS = { a: '#ff4d8d', b: '#4dd0ff' };
+const DERIVED_ORDER = ['conflict', 'redemption', 'balance', 'resonance', 'painLink'];
+
+/* ---------------- 10 组合盘词条（按衍生维度归属） ---------------- */
+
+const MATCH_ENTRIES = {
+  // 冲突指数：双方自尊对撞
+  conflict: [
+    {
+      title: '《深渊神明与灭世魔王》',
+      desc: '两个都不肯低头的人站在同一片废墟上，谁先开口谁就先认输；所以你们只好先把彼此按进灰烬里，再谈喜欢。',
+    },
+    {
+      title: '《双王座之上》',
+      desc: '王座只有一张，而你们都认为自己该坐。最终的和解方式是把世界关在门外，两个人挤在同一张椅子上互相撕咬。',
+    },
+  ],
+  // 救赎概率：一方的自毁被另一方的共情接住
+  redemption: [
+    {
+      title: '《弑神者的最后一次宽恕》',
+      desc: '他本该毁掉一切，却在某个人读懂他之前迟疑了一秒。就这一秒，整座城市活了下来，他也活了下来。',
+    },
+    {
+      title: '《坠落天使的黎明》',
+      desc: '你向下坠时有人伸出手，掌心被你的碎骨划得鲜血淋漓也没有松开。从此黑夜第一次有了破晓的理由。',
+    },
+  ],
+  // 掌控平衡：支配欲高度对等
+  balance: [
+    {
+      title: '《双生棋局》',
+      desc: '势均力敌的两个人互相试探、互相让步，谁也没赢，可谁也没输——这大概是宿命能给出的最好结局。',
+    },
+    {
+      title: '《天平两端》',
+      desc: '一人执刀，一人执秤。每一次靠近都要重新校准重量，而你们居然乐意把余生耗在这个动作上。',
+    },
+  ],
+  // 疯狂共振：破坏欲与偏执互相咬合
+  resonance: [
+    {
+      title: '《疯狂共鸣曲》',
+      desc: '一个想毁掉世界，一个只想着他。两种疯狂拼在一起竟然严丝合缝，连旁观者都分不清谁在纵容谁。',
+    },
+    {
+      title: '《共犯者的夜曲》',
+      desc: '不需要理由的默契：你说要放火，我已经在找打火机。世界的规则在你们之间失效得毫无阻力。',
+    },
+  ],
+  // 痛觉链接：双方向痛苦索取的强度
+  painLink: [
+    {
+      title: '《以痛为契》',
+      desc: '疼是你们之间唯一诚实的语言。谁先喊停，谁就先承认自己舍不得——而你们谁都不会先喊。',
+    },
+    {
+      title: '《伤痕契约》',
+      desc: '你身上的每一道旧伤他都能准确说出位置，那是比誓言更牢的契约：以血肉为印，以余生日日履行。',
+    },
+  ],
+};
+
+/* ---------------- DOM ---------------- */
+
+const nodes = {
+  nicknameInput: document.getElementById('nickname-input'),
+  characterInput: document.getElementById('character-input'),
+  registerBtn: document.getElementById('btn-register'),
+  registerKey: document.getElementById('register-key'),
+  keyInput: document.getElementById('key-input'),
+  loginBtn: document.getElementById('btn-login'),
+  session: document.getElementById('session-status'),
+  fileInput: document.getElementById('file-input'),
+  fileName: document.getElementById('file-name'),
+  uploadBtn: document.getElementById('btn-upload'),
+  matchBtn: document.getElementById('btn-match'),
+  matchHint: document.getElementById('match-hint'),
+  resetBtn: document.getElementById('btn-reset'),
+  derivedPanel: document.getElementById('panel-derived'),
+  derivedChart: document.getElementById('derived-chart'),
+  entryTitle: document.getElementById('entry-title'),
+  entryDesc: document.getElementById('entry-desc'),
+  couponInput: document.getElementById('coupon-input'),
+  redeemBtn: document.getElementById('btn-redeem'),
+  feedbackOpenBtn: document.getElementById('btn-feedback-open'),
+  feedbackModal: document.getElementById('feedback-modal'),
+  feedbackBackdrop: document.getElementById('feedback-backdrop'),
+  feedbackText: document.getElementById('feedback-text'),
+  feedbackCount: document.getElementById('feedback-count'),
+  feedbackError: document.getElementById('feedback-error'),
+  feedbackSubmitBtn: document.getElementById('btn-feedback-submit'),
+  feedbackCancelBtn: document.getElementById('btn-feedback-cancel'),
+};
+
+const radarNodes = {
+  a: document.getElementById('radar-chart-a'),
+  b: document.getElementById('radar-chart-b'),
+};
+
+const slotTitleNodes = {
+  a: document.getElementById('slot-title-a'),
+  b: document.getElementById('slot-title-b'),
+};
+
+const state = {
+  key: '',
+  text: '',
+  fileName: '',
+  user: null,
+  profiles: { a: null, b: null },
+};
+
+/* ---------------- 工具 ---------------- */
+
+const wait = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+
+function readStoredKey() {
+  try {
+    return localStorage.getItem(STORAGE_KEY) || '';
+  } catch {
+    return '';
+  }
+}
+
+function writeStoredKey(key) {
+  try {
+    localStorage.setItem(STORAGE_KEY, key);
+  } catch {
+    /* 隐私模式禁用存储时忽略，会话内仍可用 */
+  }
+}
+
+function clearStoredKey() {
+  try {
+    localStorage.removeItem(STORAGE_KEY);
+  } catch {
+    /* ignore */
+  }
+}
+
+// 请求期间置灰，避免连点
+function setBusy(button, busy, busyText) {
+  if (busy) {
+    if (!button.dataset.idleLabel) button.dataset.idleLabel = button.textContent.trim();
+    button.textContent = busyText;
+    button.disabled = true;
+  } else {
+    button.textContent = button.dataset.idleLabel || button.textContent.trim();
+    delete button.dataset.idleLabel;
+    button.disabled = false;
+  }
+}
+
+function describeError(error) {
+  return (error && error.message) || String(error);
+}
+
+/* ---------------- 渲染 ---------------- */
+
+function renderSession() {
+  const user = state.user;
+  if (!user) {
+    nodes.session.textContent = '未登录';
+    nodes.session.classList.remove('is-online');
+    return;
+  }
+  const balance = Number.isFinite(user.balance) ? user.balance : 0;
+  nodes.session.textContent = `${user.nickname} · 余额 ${balance} 点`;
+  nodes.session.classList.add('is-online');
+}
+
+function applySession(data) {
+  state.key = data.key;
+  state.user = data.user;
+  writeStoredKey(data.key);
+  nodes.registerKey.textContent = data.key;
+  nodes.keyInput.value = data.key;
+  renderSession();
+}
+
+/* ---------------- 注册 / 登录 ---------------- */
+
+nodes.registerBtn.addEventListener('click', async () => {
+  if (nodes.registerBtn.disabled) return;
+
+  const nickname = nodes.nicknameInput.value.trim();
+  if (!nickname) {
+    alert('请先输入昵称');
+    nodes.nicknameInput.focus();
+    return;
+  }
+
+  setBusy(nodes.registerBtn, true, '签发中…');
+  try {
+    const data = await auth(nickname);
+    applySession(data);
+    console.log('[auth]', data.user);
+    alert(`灵魂契约已签定。\n\n你的密钥：${data.key}\n\n请立即截图保存，这是唯一凭证，丢失无法找回。`);
+  } catch (error) {
+    alert(`签定失败：${describeError(error)}`);
+  } finally {
+    setBusy(nodes.registerBtn, false);
+  }
+});
+
+async function doLogin(key, { silent = false } = {}) {
+  setBusy(nodes.loginBtn, true, '验证中…');
+  try {
+    const data = await login(key);
+    applySession(data);
+    if (silent) console.log('[login] 自动登录成功', data.user);
+    return data;
+  } finally {
+    setBusy(nodes.loginBtn, false);
+  }
+}
+
+nodes.loginBtn.addEventListener('click', async () => {
+  if (nodes.loginBtn.disabled) return;
+
+  const key = nodes.keyInput.value.trim();
+  if (!key) {
+    alert('请输入密钥');
+    nodes.keyInput.focus();
+    return;
+  }
+
+  try {
+    const data = await doLogin(key);
+    console.log('[login]', data.user);
+  } catch (error) {
+    alert(`登录失败：${describeError(error)}`);
+  }
+});
+
+/* ---------------- 上传 TXT ---------------- */
+
+nodes.fileInput.addEventListener('change', () => {
+  const file = nodes.fileInput.files && nodes.fileInput.files[0];
+  if (!file) return;
+
+  state.text = '';
+  state.fileName = '';
+  nodes.fileName.textContent = '读取中…';
+
+  if (!/\.txt$/i.test(file.name)) {
+    nodes.fileName.textContent = '仅支持 .txt 文本文件';
+    alert('仅支持 .txt 文本文件');
+    nodes.fileInput.value = '';
+    return;
+  }
+
+  const reader = new FileReader();
+
+  reader.onload = () => {
+    const text = typeof reader.result === 'string' ? reader.result : '';
+
+    if (!text.trim()) {
+      nodes.fileName.textContent = '文件内容为空';
+      alert('文件内容为空，请重新选择');
+      nodes.fileInput.value = '';
+      return;
     }
 
-    function setBusy(button, busy, busyText) {
-      if (busy) {
-        if (!button.dataset.idleLabel) button.dataset.idleLabel = button.textContent.trim();
-        button.textContent = busyText;
-        button.disabled = true;
-      } else {
-        button.textContent = button.dataset.idleLabel || button.textContent.trim();
-        delete button.dataset.idleLabel;
-        button.disabled = false;
-      }
+    if (text.length > TEXT_LIMIT) {
+      nodes.fileName.textContent = `文本 ${text.length} 字符，超过上限 ${TEXT_LIMIT}`;
+      alert(`文本长度 ${text.length} 字符，超过上限 ${TEXT_LIMIT} 字符`);
+      nodes.fileInput.value = '';
+      return;
     }
 
-    function describeError(error) {
-      return (error && error.message) || String(error);
-    }
+    state.text = text;
+    state.fileName = file.name;
+    nodes.fileName.textContent = `${file.name} · ${text.length} 字符`;
+  };
 
-    function renderSession() {
-      const user = state.user;
-      if (!user) {
-        nodes.session.textContent = '未登录';
-        nodes.session.classList.remove('is-online');
-        return;
-      }
-      const balance = Number.isFinite(user.balance) ? user.balance : 0;
-      nodes.session.textContent = `${user.nickname} · 余额 ${balance} 点`;
-      nodes.session.classList.add('is-online');
-    }
+  reader.onerror = () => {
+    nodes.fileName.textContent = '文件读取失败';
+    alert('文件读取失败，请重试');
+  };
 
-    function applySession(data) {
-      state.key = data.key;
-      state.user = data.user;
-      writeStoredKey(data.key);
-      nodes.registerKey.textContent = data.key;
-      nodes.keyInput.value = data.key;
+  reader.readAsText(file, 'utf-8');
+});
+
+/* ================= 合盘：槽位 / 动画 / 词条 ================= */
+
+function nextSlotKey() {
+  if (!state.profiles.a) return 'a';
+  if (!state.profiles.b) return 'b';
+  return 'a'; // 两份都满时，新的侧写覆盖 A
+}
+
+function updateMatchAvailability() {
+  const ready = Boolean(state.profiles.a && state.profiles.b);
+  nodes.matchBtn.disabled = !ready;
+  nodes.matchHint.textContent = ready ? '两份侧写已就位，点击开始合盘' : '上传两份 OC 文本后即可合盘';
+}
+
+// 把某份侧写画进指定槽位
+function setSlotProfile(slotKey, profile) {
+  state.profiles[slotKey] = profile;
+  renderOCRadar(radarNodes[slotKey], profile, SLOT_COLORS[slotKey]);
+  const title = slotTitleNodes[slotKey];
+  if (title) title.textContent = `OC ${slotKey.toUpperCase()} · ${profile.name}`;
+  updateMatchAvailability();
+}
+
+// 撤销爆炸动画、恢复两个单人雷达面板
+function resetMatchView() {
+  for (const key of ['a', 'b']) {
+    const el = radarNodes[key];
+    if (!el) continue;
+    el.classList.remove('explode-anim');
+    el.style.removeProperty('display');
+    el.style.removeProperty('opacity');
+    el.style.removeProperty('transform');
+  }
+  nodes.derivedPanel.hidden = true;
+  nodes.matchBtn.textContent = '开始合盘';
+  updateMatchAvailability();
+}
+
+// 按最高的衍生维度挑选词条，次高维度决定取同组里的哪一种语气
+function pickEntry(derived) {
+  const ranked = [...DERIVED_ORDER].sort((x, y) => (derived[y] || 0) - (derived[x] || 0));
+  const topKey = ranked[0];
+  const pool = MATCH_ENTRIES[topKey] || MATCH_ENTRIES.conflict;
+  const secondary = derived[ranked[1]] || 0;
+  return { key: topKey, entry: pool[secondary >= 60 ? 1 : 0] || pool[0] };
+}
+
+async function runMatch() {
+  const a = state.profiles.a;
+  const b = state.profiles.b;
+  if (!a || !b) {
+    alert('需要两份 OC 侧写才能合盘');
+    return;
+  }
+  if (nodes.matchBtn.disabled) return;
+
+  nodes.matchBtn.disabled = true;
+  nodes.matchBtn.textContent = '合盘中…';
+
+  // 1. 两张单人雷达放大淡出
+  radarNodes.a.classList.add('explode-anim');
+  radarNodes.b.classList.add('explode-anim');
+
+  await wait(EXPLODE_MS);
+
+  // 2. 动画结束后隐藏
+  radarNodes.a.style.display = 'none';
+  radarNodes.b.style.display = 'none';
+
+  // 3. 计算 5 个衍生维度并展示第三张合盘雷达
+  const derived = computeDerived(a.scores, b.scores);
+  nodes.derivedPanel.hidden = false;
+  const chart = renderDerivedRadar(nodes.derivedChart, derived);
+  requestAnimationFrame(() => chart && chart.resize());
+
+  // 4. 匹配词条
+  const { entry } = pickEntry(derived);
+  nodes.entryTitle.textContent = entry.title;
+  nodes.entryDesc.textContent = entry.desc;
+
+  nodes.matchBtn.textContent = '已合盘';
+  nodes.matchBtn.disabled = true;
+  nodes.derivedPanel.scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+nodes.matchBtn.addEventListener('click', () => {
+  runMatch().catch((error) => {
+    alert(`合盘失败：${describeError(error)}`);
+    resetMatchView();
+  });
+});
+
+nodes.resetBtn.addEventListener('click', () => {
+  resetMatchView();
+  if (state.profiles.a) renderOCRadar(radarNodes.a, state.profiles.a, SLOT_COLORS.a);
+  if (state.profiles.b) renderOCRadar(radarNodes.b, state.profiles.b, SLOT_COLORS.b);
+});
+
+/* ---------------- 侧写 ---------------- */
+
+nodes.uploadBtn.addEventListener('click', async () => {
+  if (nodes.uploadBtn.disabled) return;
+
+  if (!state.key) {
+    alert('请先签定灵魂契约或使用密钥登录');
+    return;
+  }
+  if (!state.text) {
+    alert('请先上传角色 TXT 文件');
+    return;
+  }
+
+  const characterName = nodes.characterInput.value.trim();
+  if (!characterName) {
+    alert('请先填写这次要侧写的角色名');
+    nodes.characterInput.focus();
+    return;
+  }
+
+  setBusy(nodes.uploadBtn, true, '侧写中，请稍候…');
+  try {
+    const data = await parseText(state.key, state.text, characterName);
+    console.log('[parse] 侧写结果', data);
+    console.log('[parse] 10 维评分', data.scores);
+
+    if (state.user && Number.isFinite(data.balance)) {
+      state.user.balance = data.balance;
       renderSession();
     }
 
-    nodes.registerBtn.addEventListener('click', async () => {
-      if (nodes.registerBtn.disabled) return;
+    // 侧写成功：恢复合盘视图，把结果放进下一个空槽
+    resetMatchView();
+    const slotKey = nextSlotKey();
+    const profileName = characterName || (state.fileName || '未知 OC').replace(/\.txt$/i, '');
+    setSlotProfile(slotKey, { name: profileName, scores: data.scores });
 
-      const nickname = nodes.nicknameInput.value.trim();
-      if (!nickname) {
-        alert('请先输入昵称');
-        nodes.nicknameInput.focus();
-        return;
-      }
+    alert(
+      `侧写完成\n模型：${data.model}\n字符：${data.charCount}\n消耗：${data.cost} 点\n余额：${data.balance} 点\n\n已填入 OC ${slotKey.toUpperCase()} 雷达，详细评分见控制台`
+    );
+  } catch (error) {
+    alert(`侧写失败：${describeError(error)}`);
+  } finally {
+    setBusy(nodes.uploadBtn, false);
+  }
+});
 
-      setBusy(nodes.registerBtn, true, '签发中…');
-      try {
-        const data = await auth(nickname);
-        applySession(data);
-        console.log('[auth]', data.user);
-        alert(`灵魂契约已签定。\n\n你的密钥：${data.key}\n\n请立即截图保存，这是唯一凭证，丢失无法找回。`);
-      } catch (error) {
-        alert(`签定失败：${describeError(error)}`);
-      } finally {
-        setBusy(nodes.registerBtn, false);
-      }
-    });
+/* ================= 反馈领券 / 券码兑换 ================= */
 
-    async function doLogin(key, { silent = false } = {}) {
-      setBusy(nodes.loginBtn, true, '验证中…');
-      try {
-        const data = await login(key);
-        applySession(data);
-        if (silent) console.log('[login] 自动登录成功', data.user);
-        return data;
-      } finally {
-        setBusy(nodes.loginBtn, false);
-      }
+const FEEDBACK_MIN = 20;
+const FEEDBACK_MAX = 200;
+
+function feedbackLength() {
+  return [...nodes.feedbackText.value.trim()].length;
+}
+
+function syncFeedbackCount() {
+  nodes.feedbackCount.textContent = `${feedbackLength()} / ${FEEDBACK_MAX}`;
+}
+
+function openFeedback() {
+  if (!state.key) {
+    alert('请先签定灵魂契约或使用密钥登录');
+    return;
+  }
+  nodes.feedbackError.textContent = '';
+  nodes.feedbackText.value = '';
+  nodes.feedbackModal.hidden = false;
+  syncFeedbackCount();
+  setTimeout(() => nodes.feedbackText.focus(), 30);
+}
+
+function closeFeedback() {
+  nodes.feedbackModal.hidden = true;
+}
+
+nodes.feedbackText.addEventListener('input', () => {
+  nodes.feedbackError.textContent = '';
+  syncFeedbackCount();
+});
+
+nodes.feedbackOpenBtn.addEventListener('click', openFeedback);
+nodes.feedbackCancelBtn.addEventListener('click', closeFeedback);
+nodes.feedbackBackdrop.addEventListener('click', closeFeedback);
+
+document.addEventListener('keydown', (event) => {
+  if (event.key === 'Escape' && !nodes.feedbackModal.hidden) closeFeedback();
+});
+
+nodes.feedbackSubmitBtn.addEventListener('click', async () => {
+  if (nodes.feedbackSubmitBtn.disabled) return;
+  if (!state.key) {
+    alert('请先签定灵魂契约或使用密钥登录');
+    return;
+  }
+
+  const text = nodes.feedbackText.value.trim();
+  const length = [...text].length;
+  if (length < FEEDBACK_MIN || length > FEEDBACK_MAX) {
+    nodes.feedbackError.textContent = `需 ${FEEDBACK_MIN}-${FEEDBACK_MAX} 字，当前 ${length} 字`;
+    nodes.feedbackText.focus();
+    return;
+  }
+
+  setBusy(nodes.feedbackSubmitBtn, true, '提交中…');
+  try {
+    const data = await feedback(state.key, text);
+    closeFeedback();
+    nodes.couponInput.value = data.coupon;
+    alert(
+      `反馈已收到，感谢！\n\n你的体验券：${data.coupon}\n\n券码已填入兑换框，点击兑换即可 +${data.reward} 虚拟币。`
+    );
+  } catch (error) {
+    const message = describeError(error);
+    nodes.feedbackError.textContent = message;
+    alert(`提交失败：${message}`);
+  } finally {
+    setBusy(nodes.feedbackSubmitBtn, false);
+  }
+});
+
+nodes.redeemBtn.addEventListener('click', async () => {
+  if (nodes.redeemBtn.disabled) return;
+  if (!state.key) {
+    alert('请先签定灵魂契约或使用密钥登录');
+    return;
+  }
+
+  const coupon = nodes.couponInput.value.trim();
+  if (!coupon) {
+    alert('请输入券码');
+    nodes.couponInput.focus();
+    return;
+  }
+
+  setBusy(nodes.redeemBtn, true, '兑换中…');
+  try {
+    const data = await useCoupon(state.key, coupon);
+    if (state.user) {
+      state.user.balance = data.balance;
+      renderSession();
     }
+    nodes.couponInput.value = '';
+    alert(`兑换成功\n奖励：+${data.reward} 虚拟币\n当前余额：${data.balance} 点`);
+  } catch (error) {
+    alert(`兑换失败：${describeError(error)}`);
+  } finally {
+    setBusy(nodes.redeemBtn, false);
+  }
+});
 
-    nodes.loginBtn.addEventListener('click', async () => {
-      if (nodes.loginBtn.disabled) return;
+/* ---------------- 启动：自动登录 ---------------- */
 
-      const key = nodes.keyInput.value.trim();
-      if (!key) {
-        alert('请输入密钥');
-        nodes.keyInput.focus();
-        return;
-      }
+(async function boot() {
+  const stored = readStoredKey();
+  if (!stored) return;
 
-      try {
-        const data = await doLogin(key);
-        console.log('[login]', data.user);
-      } catch (error) {
-        alert(`登录失败：${describeError(error)}`);
-      }
-    });
+  nodes.keyInput.value = stored;
+  try {
+    await doLogin(stored, { silent: true });
+  } catch (error) {
+    clearStoredKey();
+    state.key = '';
+    state.user = null;
+    nodes.keyInput.value = '';
+    renderSession();
+    alert(`自动登录失败：${describeError(error)}\n本地密钥已清除，请重新签定或手动输入密钥。`);
+  }
+})();
 
-    nodes.fileInput.addEventListener('change', () => {
-      const file = nodes.fileInput.files && nodes.fileInput.files[0];
-      if (!file) return;
 
-      state.text = '';
-      state.fileName = '';
-      nodes.fileName.textContent = '读取中…';
-
-      if (!/\.txt$/i.test(file.name)) {
-        nodes.fileName.textContent = '仅支持 .txt 文本文件';
-        alert('仅支持 .txt 文本文件');
-        nodes.fileInput.value = '';
-        return;
-      }
-
-      const reader = new FileReader();
-
-      reader.onload = () => {
-        const text = typeof reader.result === 'string' ? reader.result : '';
-
-        if (!text.trim()) {
-          nodes.fileName.textContent = '文件内容为空';
-          alert('文件内容为空，请重新选择');
-          nodes.fileInput.value = '';
-          return;
-        }
-
-        if (text.length > TEXT_LIMIT) {
-          nodes.fileName.textContent = `文本 ${text.length} 字符，超过上限 ${TEXT_LIMIT}`;
-          alert(`文本长度 ${text.length} 字符，超过上限 ${TEXT_LIMIT} 字符`);
-          nodes.fileInput.value = '';
-          return;
-        }
-
-        state.text = text;
-        state.fileName = file.name;
-        nodes.fileName.textContent = `${file.name} · ${text.length} 字符`;
-      };
-
-      reader.onerror = () => {
-        nodes.fileName.textContent = '文件读取失败';
-        alert('文件读取失败，请重试');
-      };
-
-      reader.readAsText(file, 'utf-8');
-    });
-
-    function nextSlotKey() {
-      if (!state.profiles.a) return 'a';
-      if (!state.profiles.b) return 'b';
-      return 'a';
-    }
-
-    function updateMatchAvailability() {
-      const ready = Boolean(state.profiles.a && state.profiles.b);
-      nodes.matchBtn.disabled = !ready;
-      nodes.matchHint.textContent = ready ? '两份侧写已就位，点击开始合盘' : '上传两份 OC 文本后即可合盘';
-    }
-
-    function setSlotProfile(slotKey, profile) {
-      state.profiles[slotKey] = profile;
-      renderOCRadar(radarNodes[slotKey], profile, SLOT_COLORS[slotKey]);
-      const title = slotTitleNodes[slotKey];
-      if (title) title.textContent = `OC ${slotKey.toUpperCase()} · ${profile.name}`;
-      updateMatchAvailability();
-    }
-
-    function resetMatchView() {
-      for (const key of ['a', 'b']) {
-        const el = radarNodes[key];
-        if (!el) continue;
-        el.classList.remove('explode-anim');
-        el.style.removeProperty('display');
-        el.style.removeProperty('opacity');
-        el.style.removeProperty('transform');
-      }
-      nodes.derivedPanel.hidden = true;
-      nodes.matchBtn.textContent = '开始合盘';
-      updateMatchAvailability();
-    }
-
-    function pickEntry(derived) {
-      const ranked = [...DERIVED_ORDER].sort((x, y) => (derived[y] || 0) - (derived[x] || 0));
-      const topKey = ranked[0];
-      const pool = MATCH_ENTRIES[topKey] || MATCH_ENTRIES.conflict;
-      const secondary = derived[ranked[1]] || 0;
-      return { key: topKey, entry: pool[secondary >= 60 ? 1 : 0] || pool[0] };
-    }
-
-    async function runMatch() {
-      const a = state.profiles.a;
-      const b = state.profiles.b;
-      if (!a || !b) {
-        alert('需要两份 OC 侧写才能合盘');
-        return;
-      }
-      if (nodes.matchBtn.disabled) return;
-
-      nodes.matchBtn.disabled = true;
-      nodes.matchBtn.textContent = '合盘中…';
-
-      radarNodes.a.classList.add('explode-anim');
-      radarNodes.b.classList.add('explode-anim');
-
-      await wait(EXPLODE_MS);
-
-      radarNodes.a.style.display = 'none';
-      radarNodes.b.style.display = 'none';
-
-      const derived = computeDerived(a.scores, b.scores);
-      nodes.derivedPanel.hidden = false;
-      const chart = renderDerivedRadar(nodes.derivedChart, derived);
-      requestAnimationFrame(() => chart && chart.resize());
-
-      const { entry } = pickEntry(derived);
-      nodes.entryTitle.textContent = entry.title;
-      nodes.entryDesc.textContent = entry.desc;
-
-      nodes.matchBtn.textContent = '已合盘';
-      nodes.matchBtn.disabled = true;
-      nodes.derivedPanel.scrollIntoView({ behavior: 'smooth', block: 'start' });
-    }
-
-    nodes.matchBtn.addEventListener('click', () => {
-      runMatch().catch((error) => {
-        alert(`合盘失败：${describeError(error)}`);
-        resetMatchView();
-      });
-    });
-
-    nodes.resetBtn.addEventListener('click', () => {
-      resetMatchView();
-      if (state.profiles.a) renderOCRadar(radarNodes.a, state.profiles.a, SLOT_COLORS.a);
-      if (state.profiles.b) renderOCRadar(radarNodes.b, state.profiles.b, SLOT_COLORS.b);
-    });
-
-    nodes.uploadBtn.addEventListener('click', async () => {
-      if (nodes.uploadBtn.disabled) return;
-
-      if (!state.key) {
-        alert('请先签定灵魂契约或使用密钥登录');
-        return;
-      }
-      if (!state.text) {
-        alert('请先上传角色 TXT 文件');
-        return;
-      }
-
-      setBusy(nodes.uploadBtn, true, '侧写中，请稍候…');
-      try {
-        const data = await parseText(state.key, state.text);
-        console.log('[parse] 侧写结果', data);
-        console.log('[parse] 10 维评分', data.scores);
-
-        if (state.user && Number.isFinite(data.balance)) {
-          state.user.balance = data.balance;
-          renderSession();
-        }
-
-        resetMatchView();
-        const slotKey = nextSlotKey();
-        const profileName = (state.fileName || '未知 OC').replace(/\.txt$/i, '');
-        setSlotProfile(slotKey, { name: profileName, scores: data.scores });
-
-        alert(
-          `侧写完成\n模型：${data.model}\n字符：${data.charCount}\n消耗：${data.cost} 点\n余额：${data.balance} 点\n\n已填入 OC ${slotKey.toUpperCase()} 雷达，详细评分见控制台`
-        );
-      } catch (error) {
-        alert(`侧写失败：${describeError(error)}`);
-      } finally {
-        setBusy(nodes.uploadBtn, false);
-      }
-    });
-
-    const FEEDBACK_MIN = 20;
-    const FEEDBACK_MAX = 200;
-
-    function feedbackLength() {
-      return [...nodes.feedbackText.value.trim()].length;
-    }
-
-    function syncFeedbackCount() {
-      nodes.feedbackCount.textContent = `${feedbackLength()} / ${FEEDBACK_MAX}`;
-    }
-
-    function openFeedback() {
-      if (!state.key) {
-        alert('请先签定灵魂契约或使用密钥登录');
-        return;
-      }
-      nodes.feedbackError.textContent = '';
-      nodes.feedbackText.value = '';
-      nodes.feedbackModal.hidden = false;
-      syncFeedbackCount();
-      setTimeout(() => nodes.feedbackText.focus(), 30);
-    }
-
-    function closeFeedback() {
-      nodes.feedbackModal.hidden = true;
-    }
-
-    nodes.feedbackText.addEventListener('input', () => {
-      nodes.feedbackError.textContent = '';
-      syncFeedbackCount();
-    });
-
-    nodes.feedbackOpenBtn.addEventListener('click', openFeedback);
-    nodes.feedbackCancelBtn.addEventListener('click', closeFeedback);
-    nodes.feedbackBackdrop.addEventListener('click', closeFeedback);
-
-    document.addEventListener('keydown', (event) => {
-      if (event.key === 'Escape' && !nodes.feedbackModal.hidden) closeFeedback();
-    });
-
-    nodes.feedbackSubmitBtn.addEventListener('click', async () => {
-      if (nodes.feedbackSubmitBtn.disabled) return;
-      if (!state.key) {
-        alert('请先签定灵魂契约或使用密钥登录');
-        return;
-      }
-
-      const text = nodes.feedbackText.value.trim();
-      const length = [...text].length;
-      if (length < FEEDBACK_MIN || length > FEEDBACK_MAX) {
-        nodes.feedbackError.textContent = `需 ${FEEDBACK_MIN}-${FEEDBACK_MAX} 字，当前 ${length} 字`;
-        nodes.feedbackText.focus();
-        return;
-      }
-
-      setBusy(nodes.feedbackSubmitBtn, true, '提交中…');
-      try {
-        const data = await feedback(state.key, text);
-        closeFeedback();
-        nodes.couponInput.value = data.coupon;
-        alert(
-          `反馈已收到，感谢！\n\n你的体验券：${data.coupon}\n\n券码已填入兑换框，点击兑换即可 +${data.reward} 虚拟币。`
-        );
-      } catch (error) {
-        const message = describeError(error);
-        nodes.feedbackError.textContent = message;
-        alert(`提交失败：${message}`);
-      } finally {
-        setBusy(nodes.feedbackSubmitBtn, false);
-      }
-    });
-
-    nodes.redeemBtn.addEventListener('click', async () => {
-      if (nodes.redeemBtn.disabled) return;
-      if (!state.key) {
-        alert('请先签定灵魂契约或使用密钥登录');
-        return;
-      }
-
-      const coupon = nodes.couponInput.value.trim();
-      if (!coupon) {
-        alert('请输入券码');
-        nodes.couponInput.focus();
-        return;
-      }
-
-      setBusy(nodes.redeemBtn, true, '兑换中…');
-      try {
-        const data = await useCoupon(state.key, coupon);
-        if (state.user) {
-          state.user.balance = data.balance;
-          renderSession();
-        }
-        nodes.couponInput.value = '';
-        alert(`兑换成功\n奖励：+${data.reward} 虚拟币\n当前余额：${data.balance} 点`);
-      } catch (error) {
-        alert(`兑换失败：${describeError(error)}`);
-      } finally {
-        setBusy(nodes.redeemBtn, false);
-      }
-    });
-
-    (async function boot() {
-      const stored = readStoredKey();
-      if (!stored) return;
-
-      nodes.keyInput.value = stored;
-      try {
-        await doLogin(stored, { silent: true });
-      } catch (error) {
-        clearStoredKey();
-        state.key = '';
-        state.user = null;
-        nodes.keyInput.value = '';
-        renderSession();
-        alert(`自动登录失败：${describeError(error)}\n本地密钥已清除，请重新签定或手动输入密钥。`);
-      }
-    })();
   </script>
 </body>
 </html>
