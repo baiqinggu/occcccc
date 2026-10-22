@@ -1018,9 +1018,9 @@ function generateOCCard(data = {}) {
   ctx.fillStyle = background;
   ctx.fillRect(0, 0, CARD_WIDTH, CARD_HEIGHT);
 
-  paintGlow(ctx, 200, 140, 620, 'rgba(255, 77, 141, 0.22)');
-  paintGlow(ctx, 900, 380, 560, 'rgba(77, 208, 255, 0.14)');
-  paintGlow(ctx, 540, 1760, 720, 'rgba(139, 108, 255, 0.18)');
+  paintGlow(ctx, 200, 140, 620, 'rgba(142, 162, 255, 0.16)');
+  paintGlow(ctx, 900, 380, 560, 'rgba(232, 232, 242, 0.08)');
+  paintGlow(ctx, 540, 1760, 720, 'rgba(142, 162, 255, 0.12)');
 
   /* ---------- 网格底纹 ---------- */
 
@@ -1042,8 +1042,8 @@ function generateOCCard(data = {}) {
   /* ---------- 头部 ---------- */
 
   const accent = ctx.createLinearGradient(PADDING, 0, PADDING + 170, 0);
-  accent.addColorStop(0, '#ff4d8d');
-  accent.addColorStop(1, '#8b6cff');
+  accent.addColorStop(0, '#e8e8f2');
+  accent.addColorStop(1, '#8ea2ff');
   ctx.fillStyle = accent;
   ctx.fillRect(PADDING, 118, 170, 6);
 
@@ -1083,9 +1083,9 @@ function generateOCCard(data = {}) {
   const radius = barHeight / 2;
 
   const barFill = ctx.createLinearGradient(barX, 0, barX + barWidth, 0);
-  barFill.addColorStop(0, '#ff4d8d');
-  barFill.addColorStop(0.6, '#8b6cff');
-  barFill.addColorStop(1, '#4dd0ff');
+  barFill.addColorStop(0, '#e8e8f2');
+  barFill.addColorStop(0.6, '#8ea2ff');
+  barFill.addColorStop(1, '#b9c4ff');
 
   let rowY = 512;
 
@@ -1155,9 +1155,9 @@ function generateOCCard(data = {}) {
   ctx.textAlign = 'left';
 
   const footer = ctx.createLinearGradient(0, 1820, CARD_WIDTH, 1820);
-  footer.addColorStop(0, 'rgba(255, 77, 141, 0)');
-  footer.addColorStop(0.5, 'rgba(255, 77, 141, 0.55)');
-  footer.addColorStop(1, 'rgba(77, 208, 255, 0)');
+  footer.addColorStop(0, 'rgba(232, 232, 242, 0)');
+  footer.addColorStop(0.5, 'rgba(232, 232, 242, 0.45)');
+  footer.addColorStop(1, 'rgba(142, 162, 255, 0)');
   ctx.fillStyle = footer;
   ctx.fillRect(0, 1838, CARD_WIDTH, 3);
 
