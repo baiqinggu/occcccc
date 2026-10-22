@@ -715,6 +715,44 @@ select.input {
 .modal__err { color: var(--danger); }
 .modal__actions { display: flex; justify-content: flex-end; gap: 10px; }
 
+/* 刺破特效层 */
+.fx-layer {
+  position: fixed;
+  inset: 0;
+  z-index: 6;
+  pointer-events: none;
+  overflow: hidden;
+}
+
+.feather {
+  position: absolute;
+  top: -30px;
+  width: 7px;
+  height: 14px;
+  border-radius: 50% 50% 50% 50% / 60% 60% 40% 40%;
+  background: radial-gradient(circle at 40% 30%, rgba(255, 240, 200, 0.95), rgba(255, 214, 140, 0.25));
+  box-shadow: 0 0 14px rgba(255, 214, 140, 0.55);
+  opacity: 0;
+  animation: featherFall 4.2s cubic-bezier(0.35, 0.1, 0.5, 0.9) forwards;
+}
+
+@keyframes featherFall {
+  0% { opacity: 0; transform: translate(0, 0) rotate(0deg) scale(0.9); }
+  12% { opacity: 0.85; }
+  100% { opacity: 0; transform: translate(var(--drift, 0px), 105vh) rotate(300deg) scale(1); }
+}
+
+body.is-shaking { animation: shakeHard 0.5s cubic-bezier(0.36, 0.07, 0.19, 0.97); }
+
+@keyframes shakeHard {
+  0%, 100% { transform: translate(0, 0); }
+  15% { transform: translate(-4px, 3px); }
+  30% { transform: translate(4px, -3px); }
+  45% { transform: translate(-3px, -2px); }
+  60% { transform: translate(3px, 2px); }
+  80% { transform: translate(-2px, 1px); }
+}
+
 .toast-wrap {
   position: fixed;
   left: 50%;
@@ -784,6 +822,7 @@ select.input {
   </div>
 
   <div class="toast-wrap" id="toast-wrap" aria-live="polite"></div>
+  <div class="fx-layer" id="fx-layer" aria-hidden="true"></div>
 
   <!-- ================= 第一幕：签订契约 ================= -->
   <section class="screen" id="screen-1">
@@ -1641,7 +1680,7 @@ const AXIS_COLOR = { good: '#ffd88a', bad: '#ff5d5d', neutral: '#9fb2ff' };
 
 /* ================= 雾气呼吸 ================= */
 
-function startPulse(chart, theme, name, value) {
+function startPulse(chart, theme, name, value, palette) {
   const old = pulseTimers.get(chart);
   if (old) clearInterval(old);
 
@@ -1657,17 +1696,26 @@ function startPulse(chart, theme, name, value) {
 
     phase += 0.18;
     tick += 1;
-    if (tick % 40 === 0) phase += Math.random() * 1.2; // 偶尔换口气，别像机械振动
+    if (tick % 40 === 0) phase += Math.random() * 1.2;
 
     const k = 0.72 + Math.sin(phase) * 0.28;
 
+    // 必须带全 lineStyle / itemStyle，否则会被 ECharts 重置成默认蓝色
     chart.setOption({
+      animationDurationUpdate: 0,
       series: [
         {
           data: [
             {
               name,
               value,
+              lineStyle: {
+                width: 2,
+                color: palette.line,
+                shadowColor: palette.line,
+                shadowBlur: 16,
+              },
+              itemStyle: { color: palette.node, borderColor: palette.line, borderWidth: 1 },
               areaStyle: { color: areaGradient(rgb, k) },
             },
           ],
@@ -1779,8 +1827,9 @@ function renderOCRadar(dom, data) {
     ],
   };
 
-  chart.setOption({ ...option, animationDuration: 420, animationEasing: 'cubicOut' }, true);
-  startPulse(chart, theme, name, amplified);
+  chart.setOption({ ...option, animationDuration: 280, animationEasing: 'cubicInOut' }, true);
+  chart.__theme = theme;
+  startPulse(chart, theme, name, amplified, palette);
   return chart;
 }
 
@@ -2059,6 +2108,15 @@ const STORAGE_KEY = 'oc_engine_key';
 const TEXT_LIMIT = 30000;
 const DERIVED_ORDER = ['conflict', 'redemption', 'balance', 'resonance', 'painLink'];
 
+// 星空配色：默认冷蓝，神性刺破转金，恶性刺破转红
+const SKY = {
+  neutral: { line: '158, 178, 255', node: '214, 224, 255' },
+  good: { line: '240, 200, 120', node: '255, 232, 180' },
+  bad: { line: '255, 110, 110', node: '255, 200, 200' },
+};
+
+let skyApi = null;
+
 const $ = (id) => document.getElementById(id);
 const wait = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
@@ -2305,6 +2363,7 @@ function logout() {
   $('oc-list').innerHTML = '<p class="empty">还没有侧写过角色</p>';
 
   toast('已注销，可以换一个账号了');
+  if (skyApi) skyApi.setTheme('neutral');
   go('screen-1');
 }
 
@@ -2464,7 +2523,8 @@ function openOc(oc) {
   go('screen-3');
   // 等换幕过渡结束、容器有尺寸后再画
   setTimeout(() => {
-    renderOCRadar($('oc-chart'), { name: oc.name, scores: oc.scores });
+    const chart = renderOCRadar($('oc-chart'), { name: oc.name, scores: oc.scores });
+    applyPierceEffects(chart && chart.__theme);
   }, 360);
 }
 
@@ -2946,6 +3006,44 @@ $('btn-feedback-submit').addEventListener('click', async () => {
   }
 });
 
+/* ---------------- 刺破特效 ---------------- */
+
+function burstFeathers() {
+  const layer = $('fx-layer');
+  if (!layer || window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+
+  for (let i = 0; i < 14; i += 1) {
+    const el = document.createElement('span');
+    el.className = 'feather';
+    el.style.left = `${8 + Math.random() * 84}vw`;
+    el.style.animationDelay = `${Math.random() * 0.8}s`;
+    el.style.animationDuration = `${3.6 + Math.random() * 1.6}s`;
+    el.style.setProperty('--drift', `${Math.random() * 120 - 60}px`);
+    layer.appendChild(el);
+    setTimeout(() => el.remove(), 5600);
+  }
+}
+
+function shakeScreen() {
+  if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+  document.body.classList.remove('is-shaking');
+  void document.body.offsetWidth;
+  document.body.classList.add('is-shaking');
+  setTimeout(() => document.body.classList.remove('is-shaking'), 520);
+}
+
+function applyPierceEffects(theme) {
+  if (theme !== 'good' && theme !== 'bad') {
+    if (skyApi) skyApi.setTheme('neutral');
+    return;
+  }
+
+  if (skyApi) skyApi.setTheme(theme);
+
+  if (theme === 'bad') shakeScreen();
+  else burstFeathers();
+}
+
 /* ---------------- 背景星图 ---------------- */
 
 function initSky() {
@@ -2956,6 +3054,7 @@ function initSky() {
   if (!ctx) return;
 
   const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  let skyTheme = 'neutral';
   let width = 0;
   let height = 0;
   let groups = [];
@@ -3006,8 +3105,10 @@ function initSky() {
     const edges = points.length;
 
     ctx.lineWidth = 0.9;
-    ctx.strokeStyle = `rgba(158, 178, 255, ${0.20 * draw * fade})`;
-    ctx.shadowColor = 'rgba(140, 160, 255, 0.5)';
+    const lineTone = SKY[skyTheme].line;
+    const nodeTone = SKY[skyTheme].node;
+    ctx.strokeStyle = `rgba(${lineTone}, ${0.20 * draw * fade})`;
+    ctx.shadowColor = `rgba(${lineTone}, 0.5)`;
     ctx.shadowBlur = 6;
 
     ctx.beginPath();
@@ -3029,12 +3130,12 @@ function initSky() {
       const glow = 0.28 + 0.5 * tone2;
 
       ctx.beginPath();
-      ctx.fillStyle = `rgba(214, 224, 255, ${glow * fade})`;
+      ctx.fillStyle = `rgba(${nodeTone}, ${glow * fade})`;
       ctx.arc(points[i].x, points[i].y, 1.7, 0, Math.PI * 2);
       ctx.fill();
 
       ctx.beginPath();
-      ctx.fillStyle = `rgba(150, 172, 255, ${0.10 * fade})`;
+      ctx.fillStyle = `rgba(${lineTone}, ${0.10 * fade})`;
       ctx.arc(points[i].x, points[i].y, 6, 0, Math.PI * 2);
       ctx.fill();
     }
@@ -3062,7 +3163,8 @@ function initSky() {
 
   if (reduced) {
     drawGroup(groups[0], performance.now());
-    return;
+    skyApi = { setTheme(value) { skyTheme = value; } };
+    return skyApi;
   }
 
   groups[0].born = performance.now();
@@ -3076,6 +3178,9 @@ function initSky() {
       raf = requestAnimationFrame(frame);
     }
   });
+
+  skyApi = { setTheme(value) { skyTheme = value; } };
+  return skyApi;
 }
 
 /* ---------------- 背景视差 ---------------- */
