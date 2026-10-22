@@ -2233,22 +2233,23 @@ $('text-input').addEventListener('input', () => {
 
 /* ---------------- 基础 UI ---------------- */
 
-let toastTimer = null;
-
-function toast(message, type = 'ok', ms = 3400) {
+function toast(message, type = 'ok', ms = 3000) {
   const wrap = $('toast-wrap');
   if (!wrap) return;
+
+  // 新提示直接顶掉旧的：永远只有一条，不会叠成一列
+  wrap.querySelectorAll('.toast').forEach((node) => node.remove());
 
   const el = document.createElement('div');
   el.className = `toast toast--${type}`;
   el.textContent = message;
   wrap.appendChild(el);
 
-  clearTimeout(toastTimer);
-  toastTimer = setTimeout(() => {
+  const life = Math.max(1200, Math.min(ms, 4000));
+  setTimeout(() => {
     el.classList.add('is-out');
-    setTimeout(() => el.remove(), 320);
-  }, ms);
+    setTimeout(() => el.remove(), 300);
+  }, life);
 }
 
 // 站内询问弹窗，返回按钮的 value
@@ -2796,7 +2797,7 @@ $('btn-upload').addEventListener('click', async () => {
 
     openOc(oc);
   } catch (error) {
-    toast(error.message, 'err', 4200);
+    toast(error.message, 'err');
   } finally {
     setBusy(button, false);
   }
@@ -2850,7 +2851,7 @@ $('oc-code').addEventListener('click', async () => {
     await navigator.clipboard.writeText(code);
     toast(`已复制 ${code}`);
   } catch {
-    toast(`角色码：${code}`, 'ok', 5000);
+    toast(`角色码：${code}`);
   }
 });
 
@@ -2993,7 +2994,7 @@ $('btn-oc-match').addEventListener('click', () => {
   state.matchA = state.activeOc;
   go('screen-2');
   setTimeout(() => {
-    toast(`已锁定 ${state.matchA.name} 作为 A，再侧写或导入一个角色即可合盘`, 'ok', 5000);
+    toast(`已锁定 ${state.matchA.name} 作为 A，再侧写或导入一个角色即可合盘`);
     $('character-input').focus();
   }, 320);
 });
@@ -3014,7 +3015,7 @@ $('btn-compare').addEventListener('click', () => {
   }
 
   renderOverlayRadar($('oc-chart'), state.activeOc, other);
-  toast(`${state.activeOc.name}（实线） / ${other.name}（虚线）`, 'ok', 3000);
+  toast(`${state.activeOc.name}（实线） / ${other.name}（虚线）`);
 });
 
 /* ---------------- 注册 / 登录 / 注销 ---------------- */
@@ -3035,7 +3036,7 @@ $('btn-register').addEventListener('click', async () => {
     const data = await auth(nickname);
     applySession(data);
     openKeyModal(data.key);
-    toast('契约已签定，建议先复制密钥', 'ok', 3200);
+    toast('契约已签定，建议先复制密钥');
   } catch (error) {
     toast(error.message, 'err');
   } finally {
@@ -3145,7 +3146,7 @@ $('btn-feedback-submit').addEventListener('click', async () => {
     const data = await feedback(state.key, text);
     $('feedback-modal').hidden = true;
     $('coupon-input').value = data.coupon;
-    toast(`感谢反馈！体验券：${data.coupon}`, 'ok', 7000);
+    toast(`感谢反馈！体验券：${data.coupon}`);
   } catch (error) {
     $('feedback-error').textContent = error.message;
   } finally {
@@ -3330,7 +3331,7 @@ if (backdrop && window.matchMedia('(hover: hover)').matches) {
   const stored = readStoredKey();
   if (stored) {
     $('key-input').value = stored;
-    toast('检测到上次的密钥，点「使用密钥登录」继续', 'ok', 3000);
+    toast('检测到上次的密钥，点「使用密钥登录」继续');
   }
 })();
 
