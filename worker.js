@@ -1,8 +1,6 @@
-// ============================================================================
-// OC 心理侧写与 CP 匹配引擎 —— Cloudflare Worker 单文件版
-// 测试版：不限额 / 不扣费；先指定角色名，再按名字锁定主人公
+// OC 心理侧写与 CP 匹配引擎 —— Worker 单文件版
 // 绑定：KV namespace → OC_KV ｜ 变量：DEEPSEEK_API_KEY、SERVER_CHAN_KEY
-// ============================================================================
+// 测试版：不限额 / 不扣费；先指定角色名再锁定主人公；请求体上限 512KB
 
 /* ================= worker/kv.js ================= */
 // worker/kv.js
@@ -177,7 +175,7 @@ async function callDeepSeek(env, options = {}) {
 
   const payload = { model, messages, stream: false };
   // reasoner 的 max_tokens 与思维链共处一个预算池，需要留足余量
-  payload.max_tokens = model === MODEL_REASONER ? Math.max(maxTokens, 4096) : maxTokens;
+  payload.max_tokens = model === MODEL_REASONER ? Math.max(maxTokens, 8192) : maxTokens;
 
   if (model === MODEL_CHAT) {
     payload.temperature = temperature;
@@ -225,9 +223,17 @@ async function callDeepSeek(env, options = {}) {
       const content = (choice && choice.message && choice.message.content) || '';
       const reasoning = (choice && choice.message && choice.message.reasoning_content) || '';
 
+      const finishReason = (choice && choice.finish_reason) || 'unknown';
+
       if (!content.trim()) {
-        const error = deepseekError('DEEPSEEK_EMPTY_CONTENT', 'DeepSeek 返回内容为空', 502);
+        // 空回复：模型把预算耗在思维链上，或被安全策略清空
+        const error = deepseekError(
+          'DEEPSEEK_EMPTY_CONTENT',
+          `DeepSeek 返回内容为空（finish_reason=${finishReason}，思维链 ${reasoning.length} 字）`,
+          502
+        );
         error.retryable = true;
+        error.finishReason = finishReason;
         throw error;
       }
 
@@ -235,6 +241,7 @@ async function callDeepSeek(env, options = {}) {
         model: (data && data.model) || model,
         content,
         reasoning,
+        finishReason,
         usage: data && data.usage ? data.usage : null,
         latencyMs: Date.now() - startedAt,
         attempts: attempt,
@@ -441,7 +448,8 @@ const KEY_PATTERN = /^KEY-[A-HJ-NP-Z2-9]{4}-[A-HJ-NP-Z2-9]{4}$/;
 const KEY_ISSUE_ATTEMPTS = 5;
 
 const NICKNAME_MAX_LENGTH = 24;
-const MAX_BODY_BYTES = 64 * 1024;
+// 中文 3 字节/字，64KB 只能装约 2.1 万字，放宽到 512KB 才配得上 3 万字上限
+const MAX_BODY_BYTES = 512 * 1024;
 const INITIAL_BALANCE = 5;
 
 // 侧写计费参数
@@ -450,7 +458,7 @@ const CHAR_UNIT = 1000; // 计费阶梯：每 1000 字
 const CHARGE_PER_UNIT = 1; // 每个阶梯扣 1 点
 const MIN_CHARGE = 1; // 单次最低扣费
 const PARSE_TEMPERATURE = 0.6;
-const PARSE_MAX_TOKENS = 900; // 10 维 JSON 足够，多余 token 只会放大模型跑偏
+const PARSE_MAX_TOKENS = 1600; // 留足预算，避免 JSON 被截断成半截
 
 // 测试期开关：true = 不检查余额、不扣费
 const UNLIMITED_MODE = true;
@@ -689,7 +697,7 @@ function sanitizeScores(payload) {
 
 /* ================= 业务接口 ================= */
 
-// POST /api/parse { key, text } -> { scores, cost, balance, model, usage }
+// POST /api/parse { key, text, name } -> { scores, characterName, balance, model, usage }
 async function handleParse(request, env) {
   const body = await readJsonBody(request);
   const key = normalizeKey(body.key);
@@ -697,20 +705,17 @@ async function handleParse(request, env) {
   if (typeof body.text !== 'string') {
     throw new HttpError(400, 'INVALID_TEXT', 'text 必须为字符串');
   }
+  if (body.text.length > TEXT_MAX_LENGTH) {
+    throw new HttpError(400, 'TEXT_TOO_LONG', `文本长度 ${body.text.length} 超过上限 ${TEXT_MAX_LENGTH} 字符`);
+  }
 
   if (typeof body.name !== 'string' || !body.name.trim()) {
     throw new HttpError(400, 'INVALID_CHARACTER', '请先填写要侧写的角色名');
   }
   const characterName = body.name.trim().slice(0, 32);
-  if (body.text.length > TEXT_MAX_LENGTH) {
-    throw new HttpError(400, 'TEXT_TOO_LONG', `文本长度 ${body.text.length} 超过上限 ${TEXT_MAX_LENGTH} 字符`);
-  }
 
   const text = cleanText(body.text);
   if (!text) throw new HttpError(400, 'EMPTY_TEXT', '文本清洗后为空');
-  if (text.length > TEXT_MAX_LENGTH) {
-    throw new HttpError(400, 'TEXT_TOO_LONG', `文本长度超过上限 ${TEXT_MAX_LENGTH} 字符`);
-  }
 
   const user = await getUser(env, key);
   if (!user) throw new HttpError(404, 'USER_NOT_FOUND', '灵魂契约不存在或已失效');
@@ -726,14 +731,34 @@ async function handleParse(request, env) {
   // 动态路由：<= 8000 字走 deepseek-chat，> 8000 字走 deepseek-reasoner
   const model = pickModel(text);
 
-  const result = await callDeepSeek(env, {
+  const callOptions = {
     system: PARSE_SYSTEM_PROMPT,
     user: buildParseUserPrompt(text, characterName),
     model,
     json: true,
     temperature: PARSE_TEMPERATURE,
     maxTokens: PARSE_MAX_TOKENS,
-  });
+  };
+
+  let result;
+  try {
+    result = await callDeepSeek(env, callOptions);
+  } catch (error) {
+    // 空回复兜底：关掉 JSON 模式、换 chat 模型再试一次
+    if (error && error.code === 'DEEPSEEK_EMPTY_CONTENT') {
+      console.warn('[parse] 空回复，降级重试：', error.message);
+      result = await callDeepSeek(env, {
+        ...callOptions,
+        model: MODEL_CHAT,
+        json: false,
+        temperature: 0.3,
+        maxTokens: PARSE_MAX_TOKENS,
+        user: `${callOptions.user}\n\n再次强调：只输出那个 JSON 对象本身，不要任何解释。`,
+      });
+    } else {
+      throw error;
+    }
+  }
 
   const parsed = extractJson(result.content);
 
@@ -747,7 +772,11 @@ async function handleParse(request, env) {
 
   const scores = sanitizeScores(parsed);
   if (!scores) {
-    throw new HttpError(502, 'AI_OUTPUT_INVALID', 'AI 未返回合法的 10 维 JSON，请重试');
+    throw new HttpError(
+      502,
+      'AI_OUTPUT_INVALID',
+      `AI 返回的不是合法的 10 维 JSON（finish_reason=${result.finishReason || 'unknown'}），请重试`
+    );
   }
 
   // 测试期不扣费，余额保持不变
