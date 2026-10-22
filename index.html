@@ -1572,7 +1572,7 @@ function analyzeCouple(tokenA, tokenB) {
 
 /* ================= public/js/charts.js ================= */
 // public/js/charts.js
-// 单人雷达：三态取色（蓝/金/红）+ 尖刺突破 + 雾气呼吸
+// 单人雷达（闭合多边形 + 顶点溢出刺破 + 三态取色）、双人对照（各自保留本色与刺破）
 
 
 
@@ -1581,14 +1581,17 @@ const FONT_FAMILY = '"PingFang SC", "Noto Sans SC", "Microsoft YaHei", system-ui
 const POSITIVE_AXES = ['empathy', 'vitality', 'order', 'intellect', 'pride'];
 const NEGATIVE_AXES = ['self_destruction', 'masochism', 'obsession', 'destruction', 'dominance'];
 
-// rgb 用于动态改透明度（呼吸）
 const THEMES = {
   good: { rgb: '244, 209, 128', line: 'rgba(244, 209, 128, 0.95)', node: '#ffe9b8' },
   neutral: { rgb: '140, 170, 255', line: 'rgba(140, 170, 255, 0.92)', node: '#d3ddff' },
   bad: { rgb: '255, 96, 96', line: 'rgba(255, 96, 96, 0.95)', node: '#ffc9c9' },
 };
 
-const PIERCE_COLOR = { good: 'rgba(255, 214, 132, 0.98)', bad: 'rgba(255, 84, 84, 0.98)' };
+const AXIS_COLOR = { good: '#ffd88a', bad: '#ff5d5d', neutral: '#9fb2ff' };
+
+// 刺破时顶点超出外环的倍数（网格 max 恒为 100，靠数值溢出实现）
+const PIERCE_SCALE = 1.5;
+const PIERCE_MAX = 148;
 
 const resizeBound = new WeakSet();
 const pulseTimers = new WeakMap();
@@ -1666,8 +1669,8 @@ function areaGradient(rgb, k = 1) {
   };
 }
 
-function radarBase(theme, radius = '58%') {
-  const line = `rgba(${THEMES[theme].rgb}, 0.16)`;
+function radarBase(theme, radius = '56%') {
+  const line = `rgba(${THEMES[theme].rgb}, 0.15)`;
   return {
     center: ['50%', '50%'],
     radius,
@@ -1691,13 +1694,26 @@ function analyse(raw) {
     return good ? 'good' : 'bad';
   });
 
-  // 只要有任何一维突破，整圈维度线一起变色；没有任何突破就保持蓝色
   const theme = pierced.includes('bad') ? 'bad' : pierced.includes('good') ? 'good' : 'neutral';
 
   return { theme, pierced };
 }
 
-const AXIS_COLOR = { good: '#ffd88a', bad: '#ff5d5d', neutral: '#9fb2ff' };
+// 把刺破维度的数值放大到网格外，其余保持原值；顺序与 indicator 严格一致
+function toDisplayValues(raw, pierced, amplify = true) {
+  return raw.map((value, index) => {
+    let next = value;
+
+    if (amplify) {
+      const delta = value - 50;
+      next = Math.max(0, Math.min(100, Math.round(50 + delta * (1 + Math.min(Math.abs(delta) / 90, 0.45)))));
+    }
+
+    if (pierced[index]) next = Math.min(PIERCE_MAX, Math.round(next * PIERCE_SCALE));
+
+    return next;
+  });
+}
 
 /* ================= 雾气呼吸 ================= */
 
@@ -1721,7 +1737,7 @@ function startPulse(chart, theme, name, value, palette) {
 
     const k = 0.72 + Math.sin(phase) * 0.28;
 
-    // 必须带全 lineStyle / itemStyle，否则会被 ECharts 重置成默认蓝色
+    // 每次都要带全 lineStyle / itemStyle，否则会被重置成默认蓝色
     chart.setOption({
       animationDurationUpdate: 0,
       series: [
@@ -1755,44 +1771,14 @@ function renderOCRadar(dom, data) {
   const raw = toSeriesValue(data);
   const { theme, pierced } = analyse(raw);
   const name = seriesName(data, 'OC');
-
-  // 离中位越远放大越多
-  const amplified = raw.map((value) => {
-    const delta = value - 50;
-    const factor = 1 + Math.min(Math.abs(delta) / 90, 0.45);
-    return Math.max(0, Math.min(100, Math.round(50 + delta * factor)));
-  });
-
-  const indicator = DIMENSION_KEYS.map((key, index) => ({
-    name: `{axis|${DIMENSION_LABELS[key]}}`,
-    max: pierced[index] ? 64 : 100,
-  }));
-
   const palette = THEMES[theme];
 
-  // 刺破的尖刺：同色维度合成一条线，从圆心射出去
-  const spikes = [];
-  for (const kind of ['good', 'bad']) {
-    if (!pierced.includes(kind)) continue;
-    const values = DIMENSION_KEYS.map((key, index) =>
-      pierced[index] === kind ? Math.min(120, amplified[index] * 1.18) : 0
-    );
-    spikes.push({
-      type: 'radar',
-      symbol: 'none',
-      silent: true,
-      z: 6,
-      lineStyle: {
-        width: 2.4,
-        color: PIERCE_COLOR[kind],
-        shadowColor: PIERCE_COLOR[kind],
-        shadowBlur: 22,
-        cap: 'round',
-      },
-      areaStyle: { color: 'rgba(0,0,0,0)' },
-      data: [{ value: values }],
-    });
-  }
+  const display = toDisplayValues(raw, pierced, true);
+
+  const indicator = DIMENSION_KEYS.map((key) => ({
+    name: `{axis|${DIMENSION_LABELS[key]}}`,
+    max: 100,
+  }));
 
   const option = {
     textStyle: baseTextStyle(),
@@ -1821,7 +1807,7 @@ function renderOCRadar(dom, data) {
         data: [
           {
             name,
-            value: amplified,
+            value: display,
             lineStyle: {
               width: 2,
               color: palette.line,
@@ -1833,44 +1819,57 @@ function renderOCRadar(dom, data) {
           },
         ],
       },
-      ...spikes,
     ],
   };
 
   chart.setOption({ ...option, animationDuration: 650, animationEasing: 'cubicOut' }, true);
   chart.__theme = theme;
-  startPulse(chart, theme, name, amplified, palette);
+  startPulse(chart, theme, name, display, palette);
   return chart;
 }
 
-/* ================= 双人叠加 ================= */
+/* ================= 双人对照 ================= */
 
 function renderOverlayRadar(dom, dataA, dataB) {
   const chart = createChart(dom);
 
-  const indicator = DIMENSION_KEYS.map((key) => ({ name: DIMENSION_LABELS[key], max: 100 }));
+  const rawA = toSeriesValue(dataA);
+  const rawB = toSeriesValue(dataB);
+  const infoA = analyse(rawA);
+  const infoB = analyse(rawB);
+
+  const paletteA = THEMES[infoA.theme];
+  const paletteB = THEMES[infoB.theme];
+
+  // 各自保留自己的刺破：同一张网格下，谁的顶点要溢出就放大谁的数值
+  const valueA = toDisplayValues(rawA, infoA.pierced, true);
+  const valueB = toDisplayValues(rawB, infoB.pierced, true);
+
+  const indicator = DIMENSION_KEYS.map((key) => ({ name: `{axis|${DIMENSION_LABELS[key]}}`, max: 100 }));
   const nameA = seriesName(dataA, 'OC 1');
   const nameB = seriesName(dataB, 'OC 2');
-  const themeA = analyse(toSeriesValue(dataA)).theme;
 
   const option = {
     textStyle: baseTextStyle(),
-    tooltip: {
-      trigger: 'item',
-      backgroundColor: 'rgba(12, 12, 20, 0.94)',
-      borderColor: 'rgba(255, 255, 255, 0.16)',
-      borderWidth: 1,
-      textStyle: { color: '#eef0f8', fontSize: 12, fontFamily: FONT_FAMILY },
-    },
+    tooltip: { show: false },
     legend: {
-      bottom: 4,
+      bottom: 2,
       itemGap: 20,
       itemWidth: 18,
       itemHeight: 8,
       textStyle: { color: 'rgba(238, 240, 248, 0.8)', fontSize: 11, fontFamily: FONT_FAMILY },
       data: [nameA, nameB],
     },
-    radar: { ...radarBase('neutral', '56%'), indicator },
+    radar: {
+      ...radarBase('neutral', '54%'),
+      indicator,
+      axisName: {
+        color: '#9fb2ff',
+        fontSize: 11,
+        fontFamily: FONT_FAMILY,
+        rich: { axis: { color: '#9fb2ff', fontSize: 11 } },
+      },
+    },
     series: [
       {
         type: 'radar',
@@ -1878,24 +1877,35 @@ function renderOverlayRadar(dom, dataA, dataB) {
         data: [
           {
             name: nameA,
-            value: toSeriesValue(dataA),
-            lineStyle: { width: 1.9, color: THEMES[themeA].line },
-            itemStyle: { color: THEMES[themeA].node },
-            areaStyle: { color: areaGradient(THEMES[themeA].rgb, 0.8) },
+            value: valueA,
+            lineStyle: {
+              width: 2.2,
+              color: paletteA.line,
+              shadowColor: paletteA.line,
+              shadowBlur: 14,
+            },
+            itemStyle: { color: paletteA.node, borderColor: paletteA.line, borderWidth: 1 },
+            areaStyle: { color: areaGradient(paletteA.rgb, 0.7) },
           },
           {
             name: nameB,
-            value: toSeriesValue(dataB),
-            lineStyle: { width: 1.4, type: 'dashed', color: 'rgba(200, 210, 255, 0.7)' },
-            itemStyle: { color: 'rgba(200, 210, 255, 0.7)' },
-            areaStyle: { color: 'rgba(200, 210, 255, 0.05)' },
+            value: valueB,
+            lineStyle: {
+              width: 1.8,
+              type: 'dashed',
+              color: paletteB.line,
+              shadowColor: paletteB.line,
+              shadowBlur: 14,
+            },
+            itemStyle: { color: paletteB.node, borderColor: paletteB.line, borderWidth: 1 },
+            areaStyle: { color: areaGradient(paletteB.rgb, 0.45) },
           },
         ],
       },
     ],
   };
 
-  chart.setOption(option, true);
+  chart.setOption({ ...option, animationDuration: 650, animationEasing: 'cubicOut' }, true);
   return chart;
 }
 
@@ -1909,7 +1919,7 @@ function renderDerivedRadar(dom, derivedData) {
       ? derivedData.derived
       : derivedData || {};
 
-  const indicator = DERIVED_META.map((meta) => ({ name: meta.label, max: 100 }));
+  const indicator = DERIVED_META.map((meta) => ({ name: `{axis|${meta.label}}`, max: 100 }));
   const data = DERIVED_META.map((meta) => {
     const num = Number(values[meta.key]);
     if (!Number.isFinite(num)) return 0;
@@ -1918,14 +1928,17 @@ function renderDerivedRadar(dom, derivedData) {
 
   const option = {
     textStyle: baseTextStyle(),
-    tooltip: {
-      trigger: 'item',
-      backgroundColor: 'rgba(12, 12, 20, 0.94)',
-      borderColor: 'rgba(255, 255, 255, 0.16)',
-      borderWidth: 1,
-      textStyle: { color: '#eef0f8', fontSize: 12, fontFamily: FONT_FAMILY },
+    tooltip: { show: false },
+    radar: {
+      ...radarBase('good', '56%'),
+      indicator,
+      axisName: {
+        color: AXIS_COLOR.good,
+        fontSize: 11,
+        fontFamily: FONT_FAMILY,
+        rich: { axis: { color: AXIS_COLOR.good, fontSize: 11 } },
+      },
     },
-    radar: { ...radarBase('good', '58%'), indicator },
     series: [
       {
         type: 'radar',
@@ -1956,7 +1969,7 @@ function renderDerivedRadar(dom, derivedData) {
     ],
   };
 
-  chart.setOption(option, true);
+  chart.setOption({ ...option, animationDuration: 650, animationEasing: 'cubicOut' }, true);
   return chart;
 }
 
