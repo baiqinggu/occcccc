@@ -715,44 +715,6 @@ select.input {
 .modal__err { color: var(--danger); }
 .modal__actions { display: flex; justify-content: flex-end; gap: 10px; }
 
-/* 刺破特效层 */
-.fx-layer {
-  position: fixed;
-  inset: 0;
-  z-index: 6;
-  pointer-events: none;
-  overflow: hidden;
-}
-
-.feather {
-  position: absolute;
-  top: -30px;
-  width: 7px;
-  height: 14px;
-  border-radius: 50% 50% 50% 50% / 60% 60% 40% 40%;
-  background: radial-gradient(circle at 40% 30%, rgba(255, 240, 200, 0.95), rgba(255, 214, 140, 0.25));
-  box-shadow: 0 0 14px rgba(255, 214, 140, 0.55);
-  opacity: 0;
-  animation: featherFall 4.2s cubic-bezier(0.35, 0.1, 0.5, 0.9) forwards;
-}
-
-@keyframes featherFall {
-  0% { opacity: 0; transform: translate(0, 0) rotate(0deg) scale(0.9); }
-  12% { opacity: 0.85; }
-  100% { opacity: 0; transform: translate(var(--drift, 0px), 105vh) rotate(300deg) scale(1); }
-}
-
-body.is-shaking { animation: shakeHard 0.5s cubic-bezier(0.36, 0.07, 0.19, 0.97); }
-
-@keyframes shakeHard {
-  0%, 100% { transform: translate(0, 0); }
-  15% { transform: translate(-4px, 3px); }
-  30% { transform: translate(4px, -3px); }
-  45% { transform: translate(-3px, -2px); }
-  60% { transform: translate(3px, 2px); }
-  80% { transform: translate(-2px, 1px); }
-}
-
 .toast-wrap {
   position: fixed;
   left: 50%;
@@ -822,7 +784,6 @@ body.is-shaking { animation: shakeHard 0.5s cubic-bezier(0.36, 0.07, 0.19, 0.97)
   </div>
 
   <div class="toast-wrap" id="toast-wrap" aria-live="polite"></div>
-  <div class="fx-layer" id="fx-layer" aria-hidden="true"></div>
 
   <!-- ================= 第一幕：签订契约 ================= -->
   <section class="screen" id="screen-1">
@@ -1004,6 +965,16 @@ body.is-shaking { animation: shakeHard 0.5s cubic-bezier(0.36, 0.07, 0.19, 0.97)
       </div>
     </main>
   </section>
+
+  <!-- 通用询问弹窗 -->
+  <div class="modal" id="ask-modal" hidden>
+    <div class="modal__mask" id="ask-mask"></div>
+    <div class="modal__card" role="dialog" aria-modal="true">
+      <h3 class="modal__title" id="ask-title">提示</h3>
+      <p class="modal__tip" id="ask-text"></p>
+      <div class="modal__actions" id="ask-actions"></div>
+    </div>
+  </div>
 
   <!-- 密钥弹窗 -->
   <div class="modal" id="key-modal" hidden>
@@ -1775,18 +1746,7 @@ function renderOCRadar(dom, data) {
 
   const option = {
     textStyle: baseTextStyle(),
-    tooltip: {
-      trigger: 'item',
-      backgroundColor: 'rgba(12, 12, 20, 0.94)',
-      borderColor: 'rgba(255, 255, 255, 0.16)',
-      borderWidth: 1,
-      textStyle: { color: '#eef0f8', fontSize: 12, fontFamily: FONT_FAMILY },
-      formatter: () =>
-        DIMENSION_KEYS.map((key, index) => {
-          const mark = pierced[index] ? (pierced[index] === 'good' ? ' · 神性' : ' · 恶性') : '';
-          return `${DIMENSION_LABELS[key]}　${raw[index]}${mark}`;
-        }).join('<br/>'),
-    },
+    tooltip: { show: false },
     radar: {
       ...radarBase(theme, '56%'),
       indicator,
@@ -1827,7 +1787,7 @@ function renderOCRadar(dom, data) {
     ],
   };
 
-  chart.setOption({ ...option, animationDuration: 280, animationEasing: 'cubicInOut' }, true);
+  chart.setOption({ ...option, animationDuration: 650, animationEasing: 'cubicOut' }, true);
   chart.__theme = theme;
   startPulse(chart, theme, name, amplified, palette);
   return chart;
@@ -2086,6 +2046,15 @@ function importOc(key, code) {
 }
 
 /**
+ * 从账号的角色列表里移除一个角色（不影响其他账号）
+ * @param {string} key 灵魂契约密钥
+ * @param {string} code 形如 OC-XXXX
+ */
+function deleteOc(key, code) {
+  return request('/api/oc-delete', { method: 'POST', body: { key, code } });
+}
+
+/**
  * 兑换体验券
  * @param {string} key 灵魂契约密钥
  * @param {string} coupon 形如 VIP-XXXX
@@ -2178,8 +2147,44 @@ function toast(message, type = 'ok', ms = 3400) {
   }, ms);
 }
 
-function go(id) {
-  const next = $(id);
+// 站内询问弹窗，返回按钮的 value
+function ask(title, text, buttons) {
+  return new Promise((resolve) => {
+    $('ask-title').textContent = title;
+    $('ask-text').textContent = text;
+
+    const actions = $('ask-actions');
+    actions.innerHTML = '';
+
+    const finish = (value) => {
+      $('ask-modal').hidden = true;
+      resolve(value);
+    };
+
+    for (const item of buttons) {
+      const button = document.createElement('button');
+      button.type = 'button';
+      button.className = item.primary ? 'btn btn-solid btn-sm' : 'btn btn-quiet btn-sm';
+      button.textContent = item.label;
+      button.addEventListener('click', () => finish(item.value));
+      actions.appendChild(button);
+    }
+
+    $('ask-mask').onclick = () => finish(buttons[buttons.length - 1].value);
+    $('ask-modal').hidden = false;
+  });
+}
+
+// 同名追加 -A / -B / -C
+function nextSuffixName(base) {
+  for (const letter of 'ABCDEFGHIJKLMNOPQRSTUVWXYZ') {
+    const candidate = `${base}-${letter}`;
+    if (!state.ocs.some((oc) => oc.name === candidate)) return candidate;
+  }
+  return `${base}-${Date.now() % 1000}`;
+}
+
+function go(id) {  const next = $(id);
   if (!next || state.screen === id) return;
 
   // 回到素材页：上传区一律恢复未读取状态
@@ -2608,7 +2613,7 @@ $('btn-upload').addEventListener('click', async () => {
     return;
   }
 
-  const name = $('character-input').value.trim();
+  let name = $('character-input').value.trim();
   if (!name) {
     toast('先填这次要侧写的角色名', 'err');
     $('character-input').focus();
@@ -2619,10 +2624,37 @@ $('btn-upload').addEventListener('click', async () => {
     return;
   }
 
+  // 同名角色：先问覆盖还是保留成 -A
+  let overwriteCode = null;
+  const dup = state.ocs.find((oc) => oc.name === name);
+  if (dup) {
+    const keepName = nextSuffixName(name);
+    const choice = await ask(
+      '检测到同名角色',
+      `你已经有一个叫「${name}」的角色（${dup.code}）。要覆盖它，还是把这次的结果保留成「${keepName}」？`,
+      [
+        { label: '覆盖旧的', value: 'overwrite' },
+        { label: `保留为 ${keepName}`, value: 'keep', primary: true },
+      ]
+    );
+
+    if (choice === 'keep') name = keepName;
+    else overwriteCode = dup.code;
+  }
+
   setBusy(button, true, '侧写中…');
   try {
     const data = await parseText(state.key, state.fileText, name);
     const oc = data.profile;
+
+    if (overwriteCode) {
+      try {
+        await deleteOc(state.key, overwriteCode);
+      } catch {
+        /* 删不掉也不阻塞主流程 */
+      }
+      state.ocs = state.ocs.filter((item) => item.code !== overwriteCode);
+    }
 
     if (state.user && Number.isFinite(data.balance)) {
       state.user.balance = data.balance;
@@ -3006,42 +3038,10 @@ $('btn-feedback-submit').addEventListener('click', async () => {
   }
 });
 
-/* ---------------- 刺破特效 ---------------- */
-
-function burstFeathers() {
-  const layer = $('fx-layer');
-  if (!layer || window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
-
-  for (let i = 0; i < 14; i += 1) {
-    const el = document.createElement('span');
-    el.className = 'feather';
-    el.style.left = `${8 + Math.random() * 84}vw`;
-    el.style.animationDelay = `${Math.random() * 0.8}s`;
-    el.style.animationDuration = `${3.6 + Math.random() * 1.6}s`;
-    el.style.setProperty('--drift', `${Math.random() * 120 - 60}px`);
-    layer.appendChild(el);
-    setTimeout(() => el.remove(), 5600);
-  }
-}
-
-function shakeScreen() {
-  if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
-  document.body.classList.remove('is-shaking');
-  void document.body.offsetWidth;
-  document.body.classList.add('is-shaking');
-  setTimeout(() => document.body.classList.remove('is-shaking'), 520);
-}
+/* ---------------- 刺破特效（只改星空颜色，缓慢过渡） ---------------- */
 
 function applyPierceEffects(theme) {
-  if (theme !== 'good' && theme !== 'bad') {
-    if (skyApi) skyApi.setTheme('neutral');
-    return;
-  }
-
-  if (skyApi) skyApi.setTheme(theme);
-
-  if (theme === 'bad') shakeScreen();
-  else burstFeathers();
+  if (skyApi) skyApi.setTheme(theme === 'good' || theme === 'bad' ? theme : 'neutral');
 }
 
 /* ---------------- 背景星图 ---------------- */
@@ -3079,7 +3079,7 @@ function initSky() {
         points.push({ x: cx * width + Math.cos(angle) * r, y: cy * height + Math.sin(angle) * r });
       }
 
-      groups.push({ points, born: -1e9, life: 0 });
+      groups.push({ points, born: -1e9, tone: 'neutral' });
     }
   }
 
@@ -3103,10 +3103,11 @@ function initSky() {
 
     const points = group.points;
     const edges = points.length;
+    const tone = SKY[group.tone || 'neutral'];
 
     ctx.lineWidth = 0.9;
-    const lineTone = SKY[skyTheme].line;
-    const nodeTone = SKY[skyTheme].node;
+    const lineTone = tone.line;
+    const nodeTone = tone.node;
     ctx.strokeStyle = `rgba(${lineTone}, ${0.20 * draw * fade})`;
     ctx.shadowColor = `rgba(${lineTone}, 0.5)`;
     ctx.shadowBlur = 6;
@@ -3149,7 +3150,11 @@ function initSky() {
     if (!reduced && now - lastSpawn > 2600) {
       const idle = groups.filter((group) => (now - group.born) / 1000 > 10);
       const pick = (idle.length ? idle : groups)[Math.floor(Math.random() * (idle.length || groups.length))];
-      if (pick) pick.born = now;
+      if (pick) {
+        pick.born = now;
+        // 换色只影响"下一次亮起"的那组，旧的保持原色 → 渐变式过渡
+        pick.tone = skyTheme;
+      }
       lastSpawn = now;
     }
 
