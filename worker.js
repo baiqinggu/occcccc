@@ -354,16 +354,27 @@ const PARSE_SYSTEM_PROMPT = `你是「OC 心理侧写引擎」的核心分析器
 {"scores":{"empathy":0,"order":0,"intellect":0,"vitality":0,"pride":0,"dominance":0,"self_destruction":0,"masochism":0,"obsession":0,"destruction":0},"review":"……","dimensions":{"empathy":"……","order":"……","intellect":"……","vitality":"……","pride":"……","dominance":"……","self_destruction":"……","masochism":"……","obsession":"……","destruction":"……"}}
 上面的 0 与省略号只是占位，务必替换为真实内容。`;
 
-function buildParseUserPrompt(text, characterName) {
-  return [
+function buildParseUserPrompt(text, characterName, mbti) {
+  const lines = [
     `本次要侧写的目标角色是「${characterName}」。`,
+  ];
+
+  if (mbti) {
+    lines.push(
+      `该角色的设定 MBTI 为 ${mbti}。请将 10 维分析严格与 MBTI 的认知功能（如 Ni, Te, Fi 等）对齐。如果文本与 MBTI 有反差，请着重分析这种反差感带来的张力。`
+    );
+  }
+
+  lines.push(
     '文本里可能同时出现多个角色，请只针对这个目标角色评分与撰写评价。',
     '如果文本里找不到这个角色（或只有名字出现、没有任何可依据的内容），只返回 {"error":"CHARACTER_NOT_FOUND"}。',
     '如果能找到，按系统提示的 JSON 结构返回。',
     '<oc_text>',
     text,
-    '</oc_text>',
-  ].join('\n');
+    '</oc_text>'
+  );
+
+  return lines.join('\n');
 }
 
 
@@ -769,6 +780,9 @@ async function handleParse(request, env) {
   }
   const characterName = body.name.trim().slice(0, 32);
 
+  const mbtiRaw = typeof body.mbti === 'string' ? body.mbti.trim().toUpperCase() : '';
+  const mbti = /^[EI][NS][TF][JP]$/.test(mbtiRaw) ? mbtiRaw : '';
+
   const text = cleanText(body.text);
   if (!text) throw new HttpError(400, 'EMPTY_TEXT', '文本清洗后为空');
 
@@ -788,7 +802,7 @@ async function handleParse(request, env) {
 
   const callOptions = {
     system: PARSE_SYSTEM_PROMPT,
-    user: buildParseUserPrompt(text, characterName),
+    user: buildParseUserPrompt(text, characterName, mbti),
     model,
     json: true,
     temperature: PARSE_TEMPERATURE,
@@ -858,6 +872,7 @@ async function handleParse(request, env) {
   const profile = {
     code: await issueOcCode(env),
     name: characterName,
+    mbti,
     scores,
     review: shortText(finalParsed.review, 520),
     dimensions: sanitizeDimensions(finalParsed.dimensions),
