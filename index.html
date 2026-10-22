@@ -471,6 +471,58 @@ select.input {
   letter-spacing: 0.1em;
 }
 
+.oc-item__main {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+}
+
+.oc-item__main > span:first-child {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.oc-pick {
+  flex: none;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  border: 1px solid var(--line-strong);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 11px;
+  color: var(--muted);
+  cursor: pointer;
+  transition: background 0.2s, color 0.2s, border-color 0.2s;
+}
+
+.oc-pick:hover { border-color: rgba(154, 171, 255, 0.6); }
+
+.oc-pick.is-on {
+  background: #eceef6;
+  border-color: #eceef6;
+  color: #0a0a12;
+  font-weight: 700;
+}
+
+.pick-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-top: 12px;
+  padding: 10px 12px;
+  border: 1px solid rgba(154, 171, 255, 0.3);
+  border-radius: 10px;
+  background: rgba(154, 171, 255, 0.08);
+  animation: pop 0.3s var(--ease);
+}
+
+.pick-bar span { font-size: 11.5px; color: var(--muted); }
+
 .empty { margin: 0; font-size: 12px; color: var(--muted-2); }
 
 .import-row { display: flex; gap: 8px; }
@@ -808,6 +860,11 @@ select.input {
         <h3 class="card__title">已侧写过的 OC</h3>
         <div class="oc-list" id="oc-list">
           <p class="empty">还没有侧写过角色</p>
+        </div>
+
+        <div class="pick-bar" id="pick-bar" hidden>
+          <span id="pick-count">已选 0 / 2</span>
+          <button id="btn-pick-match" class="btn btn-solid btn-sm" type="button" disabled>直接合盘</button>
         </div>
 
         <div class="rule"><span>角色码导入</span></div>
@@ -2045,6 +2102,7 @@ const state = {
   key: '',
   user: null,
   ocs: [],
+  selected: [],
   activeOc: null,
   matchA: null,
   fileText: '',
@@ -2247,6 +2305,7 @@ function logout() {
   state.key = '';
   state.user = null;
   state.ocs = [];
+  state.selected = [];
   state.activeOc = null;
 
   $('who').textContent = '未登录';
@@ -2266,6 +2325,7 @@ function renderOcList() {
 
   if (!state.ocs.length) {
     list.innerHTML = '<p class="empty">还没有侧写过角色</p>';
+    updatePickBar();
     return;
   }
 
@@ -2273,10 +2333,69 @@ function renderOcList() {
     const btn = document.createElement('button');
     btn.type = 'button';
     btn.className = 'oc-item';
-    btn.innerHTML = `<span>${oc.name}</span><span class="oc-item__code">${oc.code}</span>`;
+
+    const main = document.createElement('span');
+    main.className = 'oc-item__main';
+    const name = document.createElement('span');
+    name.textContent = oc.name;
+    const code = document.createElement('span');
+    code.className = 'oc-item__code';
+    code.textContent = oc.code;
+    main.append(name, code);
+
+    const picked = state.selected.includes(oc.code);
+    const pick = document.createElement('span');
+    pick.className = picked ? 'oc-pick is-on' : 'oc-pick';
+    pick.textContent = picked ? '✓' : '';
+    pick.title = '选中用于合盘';
+    pick.addEventListener('click', (event) => {
+      event.stopPropagation();
+      togglePick(oc.code);
+    });
+
+    btn.append(main, pick);
     btn.addEventListener('click', () => openOc(oc));
     list.appendChild(btn);
   }
+
+  updatePickBar();
+}
+
+function togglePick(code) {
+  if (state.selected.includes(code)) {
+    state.selected = state.selected.filter((item) => item !== code);
+  } else {
+    if (state.selected.length >= 2) {
+      toast('最多选两个，先取消一个', 'err');
+      return;
+    }
+    state.selected = [...state.selected, code];
+  }
+  renderOcList();
+}
+
+function updatePickBar() {
+  const bar = $('pick-bar');
+  if (!bar) return;
+
+  bar.hidden = state.selected.length === 0;
+  $('pick-count').textContent = `已选 ${state.selected.length} / 2`;
+  $('btn-pick-match').disabled = state.selected.length !== 2;
+}
+
+function startPickedMatch() {
+  if (state.selected.length !== 2) {
+    toast('先选两个角色', 'err');
+    return;
+  }
+
+  const [codeA, codeB] = state.selected;
+  fillSelects();
+  $('select-a').value = codeA;
+  $('select-b').value = codeB;
+
+  go('screen-4');
+  setTimeout(() => $('btn-match').click(), 460);
 }
 
 async function refreshOcs() {
@@ -2627,6 +2746,8 @@ $('btn-match').addEventListener('click', async () => {
 });
 
 /* ---------------- 导航 ---------------- */
+
+$('btn-pick-match').addEventListener('click', startPickedMatch);
 
 $('btn-open-match').addEventListener('click', () => {
   if (state.ocs.length < 2) {
