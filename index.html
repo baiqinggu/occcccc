@@ -301,6 +301,24 @@ select.input {
   word-break: break-all;
 }
 
+.key-slot { cursor: pointer; }
+.key-slot:hover { border-color: rgba(154, 171, 255, 0.4); }
+
+/* 密钥弹窗 */
+.key-big {
+  margin: 4px 0 20px;
+  padding: 20px 16px;
+  border: 1px solid var(--line-strong);
+  border-radius: 12px;
+  background: rgba(154, 171, 255, 0.08);
+  text-align: center;
+  font-family: ui-monospace, Consolas, monospace;
+  font-size: clamp(16px, 3.4vw, 22px);
+  letter-spacing: 0.2em;
+  color: #e6e9ff;
+  word-break: break-all;
+}
+
 .rule {
   display: flex;
   align-items: center;
@@ -900,6 +918,20 @@ select.input {
       </div>
     </main>
   </section>
+
+  <!-- 密钥弹窗 -->
+  <div class="modal" id="key-modal" hidden>
+    <div class="modal__mask" id="key-mask"></div>
+    <div class="modal__card" role="dialog" aria-modal="true">
+      <h3 class="modal__title">把这串密钥收好</h3>
+      <p class="modal__tip">它只会完整显示这一次。换设备、换浏览器都要用它找回账号。</p>
+      <div class="key-big" id="key-big">KEY-XXXX-XXXX</div>
+      <div class="modal__actions">
+        <button id="btn-key-copy" class="btn btn-solid btn-sm" type="button">一键复制</button>
+        <button id="btn-key-close" class="btn btn-quiet btn-sm" type="button">我已保存</button>
+      </div>
+    </div>
+  </div>
 
   <!-- 反馈弹窗 -->
   <div class="modal" id="feedback-modal" hidden>
@@ -2012,6 +2044,54 @@ function resetUpload() {
   drop.querySelector('.drop__hint').textContent = 'UTF-8 / GB18030 / UTF-16 · ≤ 3 万字';
 }
 
+/* ---------------- 密钥弹窗 ---------------- */
+
+function openKeyModal(key) {
+  if (!key) return;
+  $('key-big').textContent = key;
+  $('key-modal').hidden = false;
+}
+
+async function copyKey() {
+  const key = $('key-big').textContent.trim();
+  if (!key) return;
+
+  try {
+    await navigator.clipboard.writeText(key);
+    toast('密钥已复制到剪贴板');
+    return;
+  } catch {
+    /* 回退方案 */
+  }
+
+  try {
+    const area = document.createElement('textarea');
+    area.value = key;
+    area.style.position = 'fixed';
+    area.style.opacity = '0';
+    document.body.appendChild(area);
+    area.select();
+    document.execCommand('copy');
+    area.remove();
+    toast('密钥已复制到剪贴板');
+  } catch {
+    toast(`请手动长按复制：${key}`, 'err', 8000);
+  }
+}
+
+$('btn-key-copy').addEventListener('click', copyKey);
+$('btn-key-close').addEventListener('click', () => {
+  $('key-modal').hidden = true;
+});
+$('key-mask').addEventListener('click', () => {
+  $('key-modal').hidden = true;
+});
+
+$('register-key').addEventListener('click', () => {
+  const key = state.key || $('register-key').textContent.trim();
+  if (key && !key.includes('—')) openKeyModal(key);
+});
+
 /* ---------------- 会话 ---------------- */
 
 function applySession(data) {
@@ -2475,7 +2555,8 @@ $('btn-register').addEventListener('click', async () => {
   try {
     const data = await auth(nickname);
     applySession(data);
-    toast(`契约已签定 · ${data.key}`, 'ok', 6000);
+    openKeyModal(data.key);
+    toast('契约已签定，建议先复制密钥', 'ok', 5000);
   } catch (error) {
     toast(error.message, 'err');
   } finally {
