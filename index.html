@@ -1622,13 +1622,6 @@ function radarBase(theme, radius = '58%') {
 /* ================= 判定 ================= */
 
 function analyse(raw) {
-  const byKey = (key) => raw[DIMENSION_KEYS.indexOf(key)] || 0;
-  const avg = (keys) => keys.reduce((sum, key) => sum + byKey(key), 0) / keys.length;
-
-  const posAvg = avg(POSITIVE_AXES);
-  const negAvg = avg(NEGATIVE_AXES);
-  const spread = Math.max(...raw) - Math.min(...raw);
-
   // 方向决定善恶：正向轴走高 = 神性；正向轴走低 = 恶性；负向轴反之
   const pierced = DIMENSION_KEYS.map((key, index) => {
     const value = raw[index];
@@ -1638,14 +1631,13 @@ function analyse(raw) {
     return good ? 'good' : 'bad';
   });
 
-  let theme = 'neutral';
-  if (pierced.includes('bad')) theme = 'bad';
-  else if (pierced.includes('good')) theme = 'good';
-  else if (spread >= 20) theme = posAvg >= negAvg ? 'good' : 'bad';
-  else if (Math.abs(posAvg - negAvg) >= 14) theme = posAvg > negAvg ? 'good' : 'bad';
+  // 只要有任何一维突破，整圈维度线一起变色；没有任何突破就保持蓝色
+  const theme = pierced.includes('bad') ? 'bad' : pierced.includes('good') ? 'good' : 'neutral';
 
   return { theme, pierced };
 }
+
+const AXIS_COLOR = { good: '#ffd88a', bad: '#ff5d5d', neutral: '#9fb2ff' };
 
 /* ================= 雾气呼吸 ================= */
 
@@ -1702,13 +1694,10 @@ function renderOCRadar(dom, data) {
     return Math.max(0, Math.min(100, Math.round(50 + delta * factor)));
   });
 
-  const indicator = DIMENSION_KEYS.map((key, index) => {
-    const label = DIMENSION_LABELS[key];
-    const mark = pierced[index];
-    if (mark === 'good') return { name: `{good|${label}}`, max: 64 };
-    if (mark === 'bad') return { name: `{bad|${label}}`, max: 64 };
-    return { name: `{plain|${label}}`, max: 100 };
-  });
+  const indicator = DIMENSION_KEYS.map((key, index) => ({
+    name: `{axis|${DIMENSION_LABELS[key]}}`,
+    max: pierced[index] ? 64 : 100,
+  }));
 
   const palette = THEMES[theme];
 
@@ -1754,13 +1743,15 @@ function renderOCRadar(dom, data) {
       ...radarBase(theme, '56%'),
       indicator,
       axisName: {
-        color: 'rgba(238, 240, 248, 0.6)',
+        color: AXIS_COLOR[theme],
         fontSize: 11,
         fontFamily: FONT_FAMILY,
         rich: {
-          plain: { color: '#9fb2ff', fontSize: 11 },
-          good: { color: '#ffd88a', fontSize: 12, fontWeight: 700 },
-          bad: { color: '#ff5d5d', fontSize: 12, fontWeight: 700 },
+          axis: {
+            color: AXIS_COLOR[theme],
+            fontSize: theme === 'neutral' ? 11 : 12,
+            fontWeight: theme === 'neutral' ? 400 : 700,
+          },
         },
       },
     },
@@ -1788,7 +1779,7 @@ function renderOCRadar(dom, data) {
     ],
   };
 
-  chart.setOption(option, true);
+  chart.setOption({ ...option, animationDuration: 420, animationEasing: 'cubicOut' }, true);
   startPulse(chart, theme, name, amplified);
   return chart;
 }
@@ -2383,6 +2374,16 @@ function updatePickBar() {
   $('btn-pick-match').disabled = state.selected.length !== 2;
 }
 
+function previewPair(a, b) {
+  if (!a || !b) return;
+  $('panel-derived').hidden = true;
+  $('radar-pair').hidden = false;
+  $('radar-title-a').textContent = `${a.name} · ${a.code}`;
+  $('radar-title-b').textContent = `${b.name} · ${b.code}`;
+  renderOCRadar($('radar-chart-a'), { name: a.name, scores: a.scores });
+  renderOCRadar($('radar-chart-b'), { name: b.name, scores: b.scores });
+}
+
 function startPickedMatch() {
   if (state.selected.length !== 2) {
     toast('先选两个角色', 'err');
@@ -2390,12 +2391,19 @@ function startPickedMatch() {
   }
 
   const [codeA, codeB] = state.selected;
+  const a = findOc(codeA);
+  const b = findOc(codeB);
+  if (!a || !b) {
+    toast('角色数据缺失，刷新页面再试', 'err');
+    return;
+  }
+
   fillSelects();
   $('select-a').value = codeA;
   $('select-b').value = codeB;
 
   go('screen-4');
-  setTimeout(() => $('btn-match').click(), 460);
+  setTimeout(() => previewPair(a, b), 380);
 }
 
 async function refreshOcs() {
@@ -2567,14 +2575,15 @@ $('btn-upload').addEventListener('click', async () => {
 
     toast(`「${oc.name}」侧写完成`);
 
-    // 从角色页点「合盘」进来：这份直接作为 B，自动跳去合盘
+    // 从角色页点「合盘」进来：这份直接作为 B，跳去合盘页先并排展示
     if (state.matchA && state.matchA.code !== oc.code) {
       const pending = state.matchA;
       state.matchA = null;
+      fillSelects();
       $('select-a').value = pending.code;
       $('select-b').value = oc.code;
       go('screen-4');
-      setTimeout(() => $('btn-match').click(), 460);
+      setTimeout(() => previewPair(pending, oc), 380);
       return;
     }
 
@@ -2612,10 +2621,11 @@ $('btn-import').addEventListener('click', async () => {
     if (state.matchA && state.matchA.code !== data.oc.code) {
       const pending = state.matchA;
       state.matchA = null;
+      fillSelects();
       $('select-a').value = pending.code;
       $('select-b').value = data.oc.code;
       go('screen-4');
-      setTimeout(() => $('btn-match').click(), 460);
+      setTimeout(() => previewPair(pending, data.oc), 380);
       return;
     }
 
@@ -2748,6 +2758,14 @@ $('btn-match').addEventListener('click', async () => {
 /* ---------------- 导航 ---------------- */
 
 $('btn-pick-match').addEventListener('click', startPickedMatch);
+
+['select-a', 'select-b'].forEach((id) => {
+  $(id).addEventListener('change', () => {
+    const a = findOc($('select-a').value);
+    const b = findOc($('select-b').value);
+    if (a && b && a.code !== b.code) previewPair(a, b);
+  });
+});
 
 $('btn-open-match').addEventListener('click', () => {
   if (state.ocs.length < 2) {
