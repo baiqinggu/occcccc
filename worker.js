@@ -1017,6 +1017,27 @@ async function handleFeedback(request, env, info) {
   return { coupon, coupons, balance: user.balance, reward: COUPON_REWARD };
 }
 
+// POST /api/oc-delete { key, code } -> { deleted }
+async function handleDeleteOc(request, env) {
+  const body = await readJsonBody(request);
+  const key = normalizeKey(body.key);
+
+  const raw = typeof body.code === 'string' ? body.code.trim().toUpperCase() : '';
+  const code = raw.startsWith(`${OC_PREFIX}-`) ? raw : `${OC_PREFIX}-${raw}`;
+  if (!OC_CODE_PATTERN.test(code)) {
+    throw new HttpError(400, 'INVALID_OC_CODE', '角色码格式应为 OC-XXXX');
+  }
+
+  const record = await getUser(env, key);
+  if (!record) throw new HttpError(404, 'USER_NOT_FOUND', '灵魂契约不存在或已失效');
+  const user = reviveUser(record);
+
+  const records = user.oc_records.filter((item) => item !== code);
+  await putUser(env, key, { ...user, oc_records: records });
+
+  return { deleted: code };
+}
+
 // POST /api/use-coupon { key, coupon } -> { coupon, coupons, balance, reward }
 async function handleUseCoupon(request, env) {
   const body = await readJsonBody(request);
@@ -1062,6 +1083,7 @@ const ROUTES = [
   { method: 'POST', path: '/api/parse', handler: handleParse },
   { method: 'POST', path: '/api/my-ocs', handler: handleMyOcs },
   { method: 'POST', path: '/api/oc-import', handler: handleImportOc },
+  { method: 'POST', path: '/api/oc-delete', handler: handleDeleteOc },
   { method: 'POST', path: '/api/feedback', handler: handleFeedback },
   { method: 'POST', path: '/api/use-coupon', handler: handleUseCoupon },
 ].map((route) => ({ ...route, ...compilePath(route.path) }));
