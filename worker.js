@@ -817,7 +817,25 @@ async function handleParse(request, env) {
 
   const parsed = extractJson(result.content);
 
-  if (parsed && typeof parsed === 'object' && !Array.isArray(parsed) && parsed.error === 'CHARACTER_NOT_FOUND') {
+  // 「不是……而是……」「不是……，是……」一律重写一次
+  const BANNED_REVIEW = /不是[^。！？\n]{0,30}(而是|，\s*是)/;
+  let finalParsed = parsed;
+  let finalResult = result;
+
+  if (parsed && typeof parsed === 'object' && typeof parsed.review === 'string' && BANNED_REVIEW.test(parsed.review)) {
+    const retry = await callDeepSeek(env, {
+      ...callOptions,
+      temperature: 0.35,
+      user: `${callOptions.user}\n\n重要：批注里绝对不能出现「不是……而是……」「不是……，是……」这类句式，一旦想到就整段换一种说法重写。`,
+    });
+    const retryParsed = extractJson(retry.content);
+    if (retryParsed && typeof retryParsed === 'object' && Array.isArray(Object.keys(retryParsed))) {
+      finalParsed = retryParsed;
+      finalResult = retry;
+    }
+  }
+
+  if (finalParsed && typeof finalParsed === 'object' && !Array.isArray(finalParsed) && finalParsed.error === 'CHARACTER_NOT_FOUND') {
     throw new HttpError(
       400,
       'CHARACTER_NOT_FOUND',
@@ -825,7 +843,7 @@ async function handleParse(request, env) {
     );
   }
 
-  const scores = sanitizeScores(parsed);
+  const scores = sanitizeScores(finalParsed);
   if (!scores) {
     throw new HttpError(
       502,
@@ -841,10 +859,10 @@ async function handleParse(request, env) {
     code: await issueOcCode(env),
     name: characterName,
     scores,
-    review: shortText(parsed.review, 520),
-    dimensions: sanitizeDimensions(parsed.dimensions),
+    review: shortText(finalParsed.review, 520),
+    dimensions: sanitizeDimensions(finalParsed.dimensions),
     createdAt: new Date().toISOString(),
-    model: result.model,
+    model: finalResult.model,
   };
 
   await putOc(env, profile);
@@ -855,7 +873,7 @@ async function handleParse(request, env) {
 
   return {
     profile,
-    model: result.model,
+    model: finalResult.model,
     charCount: text.length,
     cost,
     balance: remaining,
