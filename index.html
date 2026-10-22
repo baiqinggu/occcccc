@@ -2,346 +2,460 @@
 <html lang="zh-CN">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <meta name="theme-color" content="#07070d" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="theme-color" content="#08080a" />
   <title>OC 心理侧写 × CP 匹配引擎</title>
   <style>
-    :root {
-      --bg: #07070d;
-      --panel: rgba(255, 255, 255, 0.035);
-      --line: rgba(160, 170, 255, 0.16);
-      --text: #e8e9f5;
-      --muted: #8b8fa8;
-      --pink: #ff4d8d;
-      --violet: #8b6cff;
-      --cyan: #4dd0ff;
-    }
+/* public/style.css —— 暗黑极简 · 第一幕/第二幕 */
 
-    * { box-sizing: border-box; }
+:root {
+  --bg: #08080a;
+  --bg-soft: #0e0e12;
+  --surface: rgba(255, 255, 255, 0.032);
+  --surface-2: rgba(255, 255, 255, 0.055);
+  --line: rgba(255, 255, 255, 0.08);
+  --line-strong: rgba(255, 255, 255, 0.18);
+  --text: #f0f0f4;
+  --muted: #8a8a96;
+  --muted-2: #61615c;
+  --accent: #8ea2ff;
+  --ok: #7fe0b0;
+  --danger: #ff8a9b;
+  --radius: 16px;
+  --ease: cubic-bezier(0.22, 0.68, 0.24, 1);
+}
 
-    html, body { margin: 0; padding: 0; }
-
-    body {
-      min-height: 100vh;
-      color: var(--text);
-      font-family: "Noto Sans SC", "PingFang SC", "Microsoft YaHei", system-ui, -apple-system, sans-serif;
-      background:
-        radial-gradient(900px 520px at 12% -12%, rgba(255, 77, 141, 0.20), transparent 62%),
-        radial-gradient(820px 540px at 94% -4%, rgba(77, 208, 255, 0.14), transparent 58%),
-        radial-gradient(760px 720px at 50% 118%, rgba(139, 108, 255, 0.18), transparent 62%),
-        var(--bg);
-      -webkit-font-smoothing: antialiased;
-    }
-
-    /* 网格底纹（装饰层） */
-    body::before {
-      content: "";
-      position: fixed;
-      inset: 0;
-      z-index: 0;
-      pointer-events: none;
-      background-image:
-        linear-gradient(rgba(255, 255, 255, 0.028) 1px, transparent 1px),
-        linear-gradient(90deg, rgba(255, 255, 255, 0.028) 1px, transparent 1px);
-      background-size: 48px 48px;
-      -webkit-mask-image: radial-gradient(circle at 50% 26%, #000 0%, transparent 76%);
-      mask-image: radial-gradient(circle at 50% 26%, #000 0%, transparent 76%);
-    }
-
-    /* ---------- 顶部 ---------- */
-
-    .site-header {
-      position: relative;
-      z-index: 1;
-      max-width: 1180px;
-      margin: 0 auto;
-      padding: 58px 24px 26px;
-    }
-
-    .site-header h1 {
-      margin: 0;
-      font-size: clamp(24px, 4vw, 40px);
-      line-height: 1.25;
-      letter-spacing: 0.04em;
-      background: linear-gradient(100deg, #ffffff 0%, #ffc2d8 38%, #a99cff 68%, #7fe6ff 100%);
-      -webkit-background-clip: text;
-      background-clip: text;
-      color: transparent;
-    }
-
-    .site-header h1 .accent {
-      font-family: ui-monospace, Consolas, monospace;
-      opacity: 0.75;
-    }
-
-    .subtitle {
-      margin: 10px 0 0;
-      font-size: 11px;
-      letter-spacing: 0.34em;
-      color: var(--muted);
-      text-transform: uppercase;
-    }
-
-    /* ---------- 布局 ---------- */
-
-    .layout {
-      position: relative;
-      z-index: 1;
-      max-width: 1180px;
-      margin: 0 auto;
-      padding: 0 24px 80px;
-      display: grid;
-      grid-template-columns: repeat(2, minmax(0, 1fr));
-      gap: 20px;
-      align-items: start;
-    }
-
-    .panel-chart { grid-column: 1 / -1; }
-
-    .panel {
-      padding: 22px;
-      border: 1px solid var(--line);
-      border-radius: 18px;
-      background: linear-gradient(180deg, rgba(255, 255, 255, 0.055), rgba(255, 255, 255, 0.012));
-      box-shadow: 0 24px 60px rgba(0, 0, 0, 0.45);
-      -webkit-backdrop-filter: blur(10px);
-      backdrop-filter: blur(10px);
-    }
-
-    .panel h2 {
-      margin: 0 0 18px;
-      font-size: 12px;
-      font-weight: 600;
-      letter-spacing: 0.24em;
-      color: var(--muted);
-      text-transform: uppercase;
-    }
-
-    /* ---------- 表单 ---------- */
-
-    .field { margin-bottom: 12px; }
-
-    .field label {
-      display: block;
-      margin-bottom: 6px;
-      font-size: 12px;
-      letter-spacing: 0.12em;
-      color: var(--muted);
-    }
-
-    input[type="text"] {
-      width: 100%;
-      padding: 12px 14px;
-      border: 1px solid var(--line);
-      border-radius: 10px;
-      background: rgba(8, 8, 16, 0.78);
-      color: var(--text);
-      font-family: inherit;
-      font-size: 14px;
-      letter-spacing: 0.06em;
-      outline: none;
-      transition: border-color 0.18s, box-shadow 0.18s;
-    }
-
-    input[type="text"]::placeholder { color: #5b5f78; }
-
-    input[type="text"]:focus {
-      border-color: rgba(255, 77, 141, 0.62);
-      box-shadow: 0 0 0 3px rgba(255, 77, 141, 0.12);
-    }
-
-    .btn {
-      width: 100%;
-      padding: 12px 18px;
-      border: 1px solid var(--line);
-      border-radius: 10px;
-      background: rgba(255, 255, 255, 0.06);
-      color: var(--text);
-      font-family: inherit;
-      font-size: 14px;
-      letter-spacing: 0.08em;
-      cursor: pointer;
-      transition: transform 0.15s, box-shadow 0.2s, opacity 0.2s, border-color 0.2s;
-    }
-
-    .btn:hover:not(:disabled) {
-      transform: translateY(-1px);
-      border-color: rgba(139, 108, 255, 0.6);
-    }
-
-    .btn:active:not(:disabled) { transform: translateY(0); }
-
-    .btn:disabled {
-      opacity: 0.55;
-      cursor: progress;
-      transform: none;
-    }
-
-    .btn-primary {
-      border: none;
-      font-weight: 600;
-      color: #fff;
-      background: linear-gradient(100deg, var(--pink), var(--violet) 58%, #5b7cff);
-      box-shadow: 0 12px 32px rgba(255, 77, 141, 0.24);
-    }
-
-    /* ---------- 密钥展示 / 分割线 / 状态 ---------- */
-
-    .key-out {
-      margin-top: 14px;
-      padding: 12px 14px;
-      border: 1px dashed rgba(255, 77, 141, 0.36);
-      border-radius: 10px;
-      background: rgba(255, 77, 141, 0.06);
-    }
-
-    .key-out .key-label {
-      display: block;
-      margin-bottom: 4px;
-      font-size: 11px;
-      letter-spacing: 0.18em;
-      color: var(--muted);
-    }
-
-    .key-out code {
-      font-family: ui-monospace, Consolas, monospace;
-      font-size: 15px;
-      letter-spacing: 0.12em;
-      color: #ffc2d8;
-      word-break: break-all;
-    }
-
-    .divider {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      margin: 20px 0 14px;
-      font-size: 11px;
-      letter-spacing: 0.2em;
-      color: var(--muted);
-    }
-
-    .divider::before,
-    .divider::after {
-      content: "";
-      flex: 1;
-      height: 1px;
-      background: var(--line);
-    }
-
-    .session {
-      margin: 14px 0 0;
-      font-size: 12px;
-      color: var(--muted);
-      letter-spacing: 0.06em;
-    }
-
-    .session.is-online { color: #7fe6b0; }
-    .session.is-online::before { content: "● "; }
-
-    /* ---------- 上传区 ---------- */
-
-    .file-drop {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      gap: 6px;
-      padding: 28px 18px;
-      border: 1px dashed rgba(139, 108, 255, 0.42);
-      border-radius: 14px;
-      background: rgba(139, 108, 255, 0.06);
-      text-align: center;
-      cursor: pointer;
-      transition: background 0.2s, border-color 0.2s;
-    }
-
-    .file-drop:hover {
-      background: rgba(139, 108, 255, 0.13);
-      border-color: rgba(139, 108, 255, 0.75);
-    }
-
-    .file-icon { font-size: 22px; line-height: 1; opacity: 0.9; }
-    .file-title { font-size: 14px; letter-spacing: 0.06em; }
-    .file-hint { font-size: 11px; color: var(--muted); letter-spacing: 0.08em; }
-
-    .file-name {
-      margin: 12px 0;
-      font-size: 12px;
-      color: var(--muted);
-      word-break: break-all;
-      letter-spacing: 0.04em;
-    }
-
-    .tips {
-      margin: 14px 0 0;
-      font-size: 11px;
-      line-height: 1.8;
-      color: var(--muted);
-    }
-
-    /* ---------- 雷达图容器 ---------- */
-
-    .chart {
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      height: 420px;
-      border-radius: 14px;
-      background: radial-gradient(circle at 50% 50%, rgba(139, 108, 255, 0.09), transparent 70%);
-    }
-
-    #radar-chart {
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      width: 100%;
-      height: 100%;
-    }
-
-    .chart-empty {
-      font-size: 13px;
-      letter-spacing: 0.2em;
-      color: rgba(139, 143, 168, 0.85);
-    }
-
-    /* ---------- 响应式 ---------- */
-
-    @media (max-width: 860px) {
-      .site-header { padding-top: 40px; }
-      .layout { grid-template-columns: 1fr; gap: 16px; }
-      .chart { height: 340px; }
-    }
-
-    @media (prefers-reduced-motion: reduce) {
-      * { transition: none !important; }
-    }
-  </style>
-  <style>
-/* public/style.css —— 合盘交互样式 */
+* { box-sizing: border-box; }
 
 [hidden] { display: none !important; }
 
-/* ================= 双人雷达 ================= */
+html, body { margin: 0; padding: 0; }
 
+body {
+  min-height: 100vh;
+  background:
+    radial-gradient(1200px 700px at 50% -30%, rgba(142, 162, 255, 0.10), transparent 70%),
+    radial-gradient(900px 600px at 85% 110%, rgba(255, 255, 255, 0.035), transparent 70%),
+    var(--bg);
+  color: var(--text);
+  font-family: "PingFang SC", "Noto Sans SC", "Microsoft YaHei", system-ui, -apple-system, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  overflow-x: hidden;
+}
+
+/* 细颗粒底纹 */
+body::after {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  opacity: 0.045;
+  background-image: radial-gradient(rgba(255, 255, 255, 0.9) 0.5px, transparent 0.5px);
+  background-size: 3px 3px;
+}
+
+/* ================= 开场幕 ================= */
+
+.intro {
+  position: fixed;
+  inset: 0;
+  z-index: 90;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  background: var(--bg);
+  animation: introOut 0.9s var(--ease) 1.15s forwards;
+}
+
+.intro-rule {
+  width: 46px;
+  height: 1px;
+  background: var(--line-strong);
+  animation: introRise 0.9s var(--ease) both;
+}
+
+.intro-title {
+  margin: 0;
+  font-family: "Songti SC", "Noto Serif SC", "Source Han Serif SC", serif;
+  font-size: clamp(26px, 4.4vw, 40px);
+  font-weight: 500;
+  letter-spacing: 0.22em;
+  text-indent: 0.22em;
+  animation: introRise 1s var(--ease) 0.08s both;
+}
+
+.intro-sub {
+  margin: 0;
+  font-size: 10px;
+  letter-spacing: 0.42em;
+  color: var(--muted-2);
+  animation: introRise 1s var(--ease) 0.2s both;
+}
+
+@keyframes introRise {
+  from { opacity: 0; transform: translateY(14px); filter: blur(6px); }
+  to { opacity: 1; transform: none; filter: blur(0); }
+}
+
+@keyframes introOut {
+  to { opacity: 0; visibility: hidden; }
+}
+
+/* ================= 屏幕 ================= */
+
+.screen {
+  position: relative;
+  z-index: 1;
+  opacity: 0;
+  transform: translateY(10px);
+  transition: opacity 0.5s var(--ease), transform 0.5s var(--ease);
+}
+
+.screen.is-active { opacity: 1; transform: none; }
+
+.screen.is-leaving { opacity: 0; transform: scale(0.985); }
+
+.screen-gate {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 48px 20px;
+}
+
+/* ================= 第一幕：契约卡 ================= */
+
+.gate-card {
+  width: min(420px, 100%);
+  padding: 40px 34px 30px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.045), rgba(255, 255, 255, 0.012));
+  box-shadow: 0 40px 100px rgba(0, 0, 0, 0.55);
+  -webkit-backdrop-filter: blur(12px);
+  backdrop-filter: blur(12px);
+}
+
+.screen-gate.is-active .gate-card {
+  animation: cardIn 0.9s var(--ease) 1.35s both;
+}
+
+.screen-gate.is-active.is-fast .gate-card { animation-delay: 0.1s; }
+
+@keyframes cardIn {
+  from { opacity: 0; transform: translateY(18px) scale(0.985); }
+  to { opacity: 1; transform: none; }
+}
+
+.eyebrow {
+  margin: 0 0 14px;
+  font-size: 10px;
+  letter-spacing: 0.34em;
+  color: var(--muted-2);
+  text-transform: uppercase;
+}
+
+.gate-title {
+  margin: 0 0 10px;
+  font-family: "Songti SC", "Noto Serif SC", serif;
+  font-size: 25px;
+  font-weight: 500;
+  line-height: 1.55;
+  letter-spacing: 0.06em;
+}
+
+.gate-desc {
+  margin: 0 0 26px;
+  font-size: 12.5px;
+  line-height: 1.9;
+  color: var(--muted);
+}
+
+/* ================= 表单 ================= */
+
+.field { margin-bottom: 14px; }
+
+.field label {
+  display: block;
+  margin-bottom: 8px;
+  font-size: 11px;
+  letter-spacing: 0.16em;
+  color: var(--muted);
+}
+
+input[type="text"] {
+  width: 100%;
+  padding: 13px 14px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: rgba(0, 0, 0, 0.42);
+  color: var(--text);
+  font-family: inherit;
+  font-size: 14px;
+  letter-spacing: 0.04em;
+  outline: none;
+  transition: border-color 0.2s, background 0.2s;
+}
+
+input[type="text"]::placeholder { color: #4d4d57; }
+
+input[type="text"]:focus {
+  border-color: rgba(255, 255, 255, 0.34);
+  background: rgba(0, 0, 0, 0.6);
+}
+
+/* ================= 按钮：去渐变 ================= */
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  padding: 13px 18px;
+  border: 1px solid transparent;
+  border-radius: 10px;
+  font-family: inherit;
+  font-size: 13.5px;
+  letter-spacing: 0.14em;
+  cursor: pointer;
+  transition: background 0.2s, border-color 0.2s, color 0.2s, transform 0.12s, opacity 0.2s;
+}
+
+.btn:active:not(:disabled) { transform: translateY(1px); }
+
+.btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+/* 主按钮：近白实底 + 深色字（无渐变） */
+.btn-primary {
+  background: #e9e9ef;
+  color: #0a0a0c;
+  font-weight: 600;
+}
+
+.btn-primary:hover:not(:disabled) { background: #ffffff; }
+
+/* 次按钮：描边 */
+.btn-secondary {
+  background: transparent;
+  border-color: var(--line-strong);
+  color: var(--text);
+}
+
+.btn-secondary:hover:not(:disabled) {
+  border-color: rgba(255, 255, 255, 0.42);
+  background: rgba(255, 255, 255, 0.04);
+}
+
+/* 幽灵按钮 */
+.btn-ghost {
+  background: transparent;
+  border-color: var(--line);
+  color: var(--muted);
+}
+
+.btn-ghost:hover:not(:disabled) {
+  color: var(--text);
+  border-color: var(--line-strong);
+}
+
+.btn-sm {
+  width: auto;
+  padding: 10px 18px;
+  font-size: 12px;
+  letter-spacing: 0.1em;
+}
+
+/* ================= 密钥 / 分割线 / 状态 ================= */
+
+.key-out {
+  margin-top: 18px;
+  padding: 12px 14px;
+  border: 1px solid var(--line);
+  border-left: 2px solid var(--accent);
+  border-radius: 8px;
+  background: rgba(142, 162, 255, 0.05);
+}
+
+.key-label {
+  display: block;
+  margin-bottom: 5px;
+  font-size: 10px;
+  letter-spacing: 0.2em;
+  color: var(--muted-2);
+}
+
+.key-out code {
+  font-family: ui-monospace, Consolas, monospace;
+  font-size: 14px;
+  letter-spacing: 0.14em;
+  color: #dfe3ff;
+  word-break: break-all;
+}
+
+.gate-divider {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 26px 0 18px;
+  font-size: 10px;
+  letter-spacing: 0.24em;
+  color: var(--muted-2);
+}
+
+.gate-divider::before,
+.gate-divider::after {
+  content: "";
+  flex: 1;
+  height: 1px;
+  background: var(--line);
+}
+
+.session {
+  margin: 16px 0 0;
+  font-size: 11px;
+  letter-spacing: 0.1em;
+  color: var(--muted-2);
+}
+
+.session.is-online { color: var(--ok); }
+
+/* ================= 第二幕 ================= */
+
+.screen-app {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  padding: 44px 24px 60px;
+}
+
+.app-header {
+  width: min(1080px, 100%);
+  margin: 0 auto 26px;
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 20px;
+  flex-wrap: wrap;
+}
+
+.app-title {
+  margin: 0;
+  font-family: "Songti SC", "Noto Serif SC", serif;
+  font-size: clamp(20px, 2.6vw, 27px);
+  font-weight: 500;
+  letter-spacing: 0.06em;
+}
+
+.session--app { margin: 0; }
+
+.app-main {
+  width: min(1080px, 100%);
+  margin: 0 auto;
+  display: grid;
+  grid-template-columns: 1.35fr 1fr;
+  gap: 20px;
+  align-items: start;
+}
+
+/* 模块 */
+.module {
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--surface);
+}
+
+.module-head { margin-bottom: 20px; }
+
+.module-head h3 {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 500;
+  letter-spacing: 0.06em;
+}
+
+/* 主模块：更亮、更大 */
+.module-primary {
+  padding: 30px 28px 26px;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.05), rgba(255, 255, 255, 0.015));
+  border-color: var(--line-strong);
+  box-shadow: 0 30px 80px rgba(0, 0, 0, 0.45);
+}
+
+/* 次模块：压暗、缩小、弱化 */
+.module-secondary {
+  padding: 22px 20px 18px;
+  background: rgba(255, 255, 255, 0.016);
+  border-color: rgba(255, 255, 255, 0.055);
+}
+
+.module-secondary .module-head h3 { font-size: 13px; color: var(--muted); }
+
+.module-secondary .eyebrow { color: var(--muted-2); }
+
+.form-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+}
+
+.file-drop {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  height: 47px;
+  border: 1px dashed var(--line-strong);
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.02);
+  cursor: pointer;
+  transition: border-color 0.2s, background 0.2s;
+}
+
+.file-drop:hover {
+  border-color: rgba(255, 255, 255, 0.4);
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.file-title { font-size: 12.5px; }
+.file-hint { font-size: 10px; color: var(--muted-2); }
+
+.file-name {
+  margin: 14px 0;
+  font-size: 11.5px;
+  color: var(--muted);
+  word-break: break-all;
+}
+
+.tips {
+  margin: 14px 0 0;
+  font-size: 11px;
+  line-height: 1.85;
+  color: var(--muted-2);
+}
+
+/* 雷达 */
 .radar-stage {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 18px;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
 }
 
 .radar-slot {
-  padding: 14px;
-  border: 1px solid rgba(160, 170, 255, 0.14);
-  border-radius: 14px;
-  background: rgba(255, 255, 255, 0.02);
-  transform-origin: center;
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  border-radius: 10px;
+  background: rgba(0, 0, 0, 0.25);
+  padding: 8px;
 }
 
 .slot-title {
-  margin: 0 0 8px;
-  font-size: 12px;
-  letter-spacing: 0.16em;
-  color: rgba(139, 143, 168, 0.9);
+  margin: 0 0 4px;
+  font-size: 10.5px;
+  letter-spacing: 0.1em;
+  color: var(--muted-2);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -352,80 +466,98 @@
   align-items: center;
   justify-content: center;
   width: 100%;
-  height: 380px;
-  border-radius: 12px;
-  background: radial-gradient(circle at 50% 50%, rgba(139, 108, 255, 0.08), transparent 70%);
+  height: 250px;
   transform-origin: center;
 }
 
-.radar-canvas--derived { height: 440px; }
+.radar-canvas--derived { height: 340px; }
 
-/* ================= 合盘操作条 ================= */
+.chart-empty {
+  font-size: 11px;
+  letter-spacing: 0.16em;
+  color: #4a4a52;
+}
 
 .match-bar {
   display: flex;
   align-items: center;
-  gap: 16px;
+  gap: 12px;
   flex-wrap: wrap;
-  margin-top: 18px;
-}
-
-.match-bar .btn {
-  width: auto;
-  min-width: 180px;
-  padding-left: 28px;
-  padding-right: 28px;
+  margin-top: 16px;
 }
 
 .match-hint {
   margin: 0;
-  font-size: 12px;
-  letter-spacing: 0.06em;
-  color: rgba(139, 143, 168, 0.9);
+  font-size: 11px;
+  color: var(--muted-2);
 }
 
-/* 次要按钮 */
-.btn-ghost {
-  width: auto;
-  margin-top: 18px;
-  padding-left: 26px;
-  padding-right: 26px;
-  background: rgba(255, 255, 255, 0.04);
-  border-color: rgba(160, 170, 255, 0.22);
-  color: rgba(232, 233, 245, 0.85);
-}
-
-/* ================= 词条结果 ================= */
+.derived { margin-top: 18px; }
 
 .match-entry {
-  margin-top: 18px;
-  padding: 18px 20px;
-  border: 1px dashed rgba(255, 77, 141, 0.35);
-  border-radius: 14px;
-  background: rgba(255, 77, 141, 0.05);
+  margin-top: 14px;
+  padding: 16px 18px;
+  border: 1px solid var(--line);
+  border-left: 2px solid var(--accent);
+  border-radius: 10px;
+  background: rgba(142, 162, 255, 0.04);
 }
 
 .entry-title {
   margin: 0 0 8px;
-  font-size: 20px;
-  font-weight: 700;
-  letter-spacing: 0.06em;
-  color: #ffc2d8;
+  font-family: "Songti SC", "Noto Serif SC", serif;
+  font-size: 17px;
+  letter-spacing: 0.05em;
 }
 
 .entry-desc {
   margin: 0;
-  font-size: 13px;
-  line-height: 1.9;
-  color: rgba(232, 233, 245, 0.8);
+  font-size: 12.5px;
+  line-height: 1.95;
+  color: var(--muted);
 }
 
-/* ================= 反馈弹窗 ================= */
+.explode-anim {
+  transform: scale(1.18);
+  opacity: 0;
+  transition: all 0.5s ease-in-out;
+}
+
+/* ================= 页脚 ================= */
+
+.app-footer {
+  width: min(1080px, 100%);
+  margin: 30px auto 0;
+}
+
+.footer-inner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  flex-wrap: wrap;
+  padding-top: 22px;
+  border-top: 1px solid var(--line);
+}
+
+.coupon-row {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
+
+.coupon-row input {
+  width: 190px;
+  padding: 10px 12px;
+  font-size: 12px;
+}
+
+/* ================= 弹窗 ================= */
 
 .modal {
   position: fixed;
   inset: 0;
-  z-index: 50;
+  z-index: 60;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -435,111 +567,107 @@
 .modal-backdrop {
   position: absolute;
   inset: 0;
-  background: rgba(4, 4, 10, 0.74);
-  -webkit-backdrop-filter: blur(6px);
-  backdrop-filter: blur(6px);
+  background: rgba(0, 0, 0, 0.72);
+  -webkit-backdrop-filter: blur(8px);
+  backdrop-filter: blur(8px);
 }
 
 .modal-card {
   position: relative;
-  width: min(560px, 100%);
-  padding: 24px;
-  border: 1px solid rgba(160, 170, 255, 0.2);
-  border-radius: 18px;
-  background: linear-gradient(180deg, #14131f, #0b0a14);
-  box-shadow: 0 30px 80px rgba(0, 0, 0, 0.62);
+  width: min(520px, 100%);
+  padding: 28px;
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius);
+  background: #101014;
+  box-shadow: 0 40px 100px rgba(0, 0, 0, 0.7);
+  animation: cardIn 0.4s var(--ease) both;
 }
 
 .modal-title {
   margin: 0 0 8px;
-  font-size: 17px;
-  font-weight: 700;
-  letter-spacing: 0.06em;
-  color: #ffc2d8;
+  font-family: "Songti SC", "Noto Serif SC", serif;
+  font-size: 18px;
+  font-weight: 500;
 }
 
 .modal-tip {
   margin: 0 0 16px;
   font-size: 12px;
-  line-height: 1.8;
-  color: rgba(139, 143, 168, 0.95);
+  line-height: 1.85;
+  color: var(--muted);
 }
 
 .modal-textarea {
   width: 100%;
-  min-height: 150px;
+  min-height: 140px;
   padding: 14px;
-  border: 1px solid rgba(160, 170, 255, 0.18);
-  border-radius: 12px;
-  background: rgba(8, 8, 16, 0.82);
-  color: #e8e9f5;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: rgba(0, 0, 0, 0.5);
+  color: var(--text);
   font-family: inherit;
-  font-size: 14px;
-  line-height: 1.75;
+  font-size: 13px;
+  line-height: 1.8;
   resize: vertical;
   outline: none;
-  transition: border-color 0.18s, box-shadow 0.18s;
 }
 
-.modal-textarea::placeholder { color: #5b5f78; }
-
-.modal-textarea:focus {
-  border-color: rgba(255, 77, 141, 0.6);
-  box-shadow: 0 0 0 3px rgba(255, 77, 141, 0.12);
-}
+.modal-textarea:focus { border-color: rgba(255, 255, 255, 0.32); }
 
 .modal-meta {
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 12px;
-  margin: 8px 0 16px;
-  font-size: 11px;
-  letter-spacing: 0.06em;
-  color: rgba(139, 143, 168, 0.9);
+  margin: 10px 0 18px;
+  font-size: 10.5px;
+  letter-spacing: 0.08em;
+  color: var(--muted-2);
 }
 
-.modal-error { color: #ff8aa8; }
+.modal-error { color: var(--danger); }
 
 .modal-actions {
   display: flex;
   justify-content: flex-end;
-  gap: 12px;
+  gap: 10px;
 }
 
-.modal-actions .btn {
-  width: auto;
-  min-width: 132px;
+/* ================= 响应式 ================= */
+
+@media (max-width: 900px) {
+  .app-main { grid-template-columns: 1fr; }
+  .radar-canvas { height: 220px; }
 }
 
-.modal-actions .btn-ghost { margin-top: 0; }
-
-/* ================= 缩放爆炸退场动画 ================= */
-
-.explode-anim {
-  transform: scale(1.2);
-  opacity: 0;
-  transition: all 0.5s ease-in-out;
+@media (max-width: 620px) {
+  .screen-app { padding: 30px 16px 48px; }
+  .module-primary { padding: 24px 20px 22px; }
+  .form-grid { grid-template-columns: 1fr; }
+  .gate-card { padding: 32px 22px 24px; }
+  .coupon-row input { width: 150px; }
 }
 
-@media (max-width: 860px) {
-  .radar-stage { grid-template-columns: 1fr; }
-  .radar-canvas { height: 320px; }
-  .radar-canvas--derived { height: 380px; }
+@media (prefers-reduced-motion: reduce) {
+  * { animation-duration: 0.01ms !important; animation-delay: 0ms !important; transition-duration: 0.01ms !important; }
 }
 
   </style>
 </head>
 <body>
-  <header class="site-header">
-    <h1>OC 心理侧写 <span class="accent">×</span> CP 匹配引擎</h1>
-    <p class="subtitle">Persona Profile Engine / Ten Dimensions</p>
-  </header>
+  <!-- 开场幕 -->
+  <div class="intro" id="intro" aria-hidden="true">
+    <div class="intro-rule"></div>
+    <h1 class="intro-title">OC 心理侧写</h1>
+    <p class="intro-sub">PERSONA&nbsp;&nbsp;PROFILE&nbsp;&nbsp;ENGINE</p>
+  </div>
 
-  <main class="layout">
-    <!-- 01 注册 + 登录 -->
-    <section class="panel">
-      <h2>01 / 灵魂契约</h2>
+  <!-- 第一幕：签约 -->
+  <section class="screen screen-gate" id="screen-gate">
+    <div class="gate-card">
+      <p class="eyebrow">第一幕 · 灵魂契约</p>
+      <h2 class="gate-title">在开始侧写之前<br />先留下你的名字</h2>
+      <p class="gate-desc">签定后会得到一串密钥，它是你唯一的凭证。</p>
 
       <div class="field">
         <label for="nickname-input">昵称</label>
@@ -552,92 +680,113 @@
         <code id="register-key">————</code>
       </div>
 
-      <div class="divider">已有密钥</div>
+      <div class="gate-divider"><span>已有密钥</span></div>
 
       <div class="field">
         <label for="key-input">密钥</label>
         <input id="key-input" type="text" placeholder="KEY-XXXX-XXXX" autocomplete="off" />
       </div>
-      <button id="btn-login" class="btn" type="button">使用密钥登录</button>
+      <button id="btn-login" class="btn btn-secondary" type="button">使用密钥登录</button>
 
       <p class="session" id="session-status">未登录</p>
+    </div>
+  </section>
 
-      <div class="divider">券码兑换</div>
-
-      <div class="field">
-        <label for="coupon-input">体验券码</label>
-        <input id="coupon-input" type="text" placeholder="VIP-XXXX" autocomplete="off" />
+  <!-- 第二幕：主界面 -->
+  <div class="screen screen-app" id="screen-app" hidden>
+    <header class="app-header">
+      <div class="app-header-main">
+        <p class="eyebrow">第二幕 · 侧写</p>
+        <h2 class="app-title">给一个角色，做一次心理侧写</h2>
       </div>
-      <button id="btn-redeem" class="btn" type="button">兑换券码（+5 虚拟币）</button>
-    </section>
+      <p class="session session--app" id="session-status-app">未登录</p>
+    </header>
 
-    <!-- 02 上传 TXT -->
-    <section class="panel">
-      <h2>02 / 侧写素材</h2>
-
-      <div class="field">
-        <label for="character-input">这次要侧写的角色名</label>
-        <input id="character-input" type="text" maxlength="32" placeholder="例：林晚 / 阿撒兹勒" autocomplete="off" />
-      </div>
-
-      <label class="file-drop" for="file-input">
-        <span class="file-icon">⇪</span>
-        <span class="file-title">点击上传角色 TXT</span>
-        <span class="file-hint">单文件 ≤ 30000 字符</span>
-      </label>
-      <input id="file-input" type="file" accept=".txt,text/plain" hidden />
-
-      <p class="file-name" id="file-name">尚未选择文件</p>
-      <button id="btn-upload" class="btn btn-primary" type="button">开始侧写</button>
-
-      <p class="tips">上传后将调用 DeepSeek 对角色进行 10 维心理评分，按字数扣除余额。<br />侧写结果会先打印在浏览器控制台中。</p>
-
-      <button id="btn-feedback-open" class="btn btn-ghost" type="button">✎ 提交反馈 · 领体验券</button>
-    </section>
-
-    <!-- 03 单人雷达（两个独立容器） -->
-    <section class="panel panel-chart">
-      <h2>03 / 人格雷达</h2>
-      <div class="radar-stage">
-        <div class="radar-slot">
-          <p class="slot-title" id="slot-title-a">OC 1 · 待侧写</p>
-          <div id="radar-chart-a" class="radar-canvas"><span class="chart-empty">等待侧写数据…</span></div>
+    <main class="app-main">
+      <!-- 主模块：侧写素材 -->
+      <section class="module module-primary">
+        <div class="module-head">
+          <p class="eyebrow">侧写素材</p>
+          <h3>上传角色文本，锁定主角</h3>
         </div>
-        <div class="radar-slot">
-          <p class="slot-title" id="slot-title-b">OC 2 · 待侧写</p>
-          <div id="radar-chart-b" class="radar-canvas"><span class="chart-empty">等待侧写数据…</span></div>
-        </div>
-      </div>
-      <div class="match-bar">
-        <button id="btn-match" class="btn btn-primary" type="button" disabled>开始合盘</button>
-        <p class="match-hint" id="match-hint">上传两份 OC 文本后即可合盘</p>
-      </div>
-    </section>
 
-    <!-- 04 合盘结果（默认隐藏） -->
-    <section class="panel panel-chart" id="panel-derived" hidden>
-      <h2>04 / 合盘结果</h2>
-      <div id="derived-chart" class="radar-canvas radar-canvas--derived"></div>
-      <div class="match-entry">
-        <p class="entry-title" id="entry-title"></p>
-        <p class="entry-desc" id="entry-desc"></p>
+        <div class="form-grid">
+          <div class="field">
+            <label for="character-input">这次要侧写的角色名</label>
+            <input id="character-input" type="text" maxlength="32" placeholder="例：林晚" autocomplete="off" />
+          </div>
+          <div class="field">
+            <label>角色文本（.txt）</label>
+            <label class="file-drop" for="file-input">
+              <span class="file-title">点击上传</span>
+              <span class="file-hint">≤ 30000 字符</span>
+            </label>
+          </div>
+        </div>
+
+        <input id="file-input" type="file" accept=".txt,text/plain" hidden />
+        <p class="file-name" id="file-name">尚未选择文件</p>
+        <button id="btn-upload" class="btn btn-primary" type="button">开始侧写</button>
+        <p class="tips">按角色名锁定主人公，只评估 ta 本人的言行。测试阶段不扣额度。</p>
+      </section>
+
+      <!-- 次模块：合盘（权重明显更低） -->
+      <section class="module module-secondary" id="module-match">
+        <div class="module-head">
+          <p class="eyebrow">可选 · 合盘</p>
+          <h3>两份侧写都完成后解锁</h3>
+        </div>
+
+        <div class="radar-stage">
+          <div class="radar-slot">
+            <p class="slot-title" id="slot-title-a">OC 1 · 待侧写</p>
+            <div id="radar-chart-a" class="radar-canvas"><span class="chart-empty">等待侧写</span></div>
+          </div>
+          <div class="radar-slot">
+            <p class="slot-title" id="slot-title-b">OC 2 · 待侧写</p>
+            <div id="radar-chart-b" class="radar-canvas"><span class="chart-empty">等待侧写</span></div>
+          </div>
+        </div>
+
+        <div class="match-bar">
+          <button id="btn-match" class="btn btn-secondary btn-sm" type="button" disabled>开始合盘</button>
+          <p class="match-hint" id="match-hint">上传两份角色文本后即可合盘</p>
+        </div>
+
+        <div class="derived" id="panel-derived" hidden>
+          <div id="derived-chart" class="radar-canvas radar-canvas--derived"></div>
+          <div class="match-entry">
+            <p class="entry-title" id="entry-title"></p>
+            <p class="entry-desc" id="entry-desc"></p>
+          </div>
+          <button id="btn-reset" class="btn btn-ghost btn-sm" type="button">重新合盘</button>
+        </div>
+      </section>
+    </main>
+
+    <footer class="app-footer">
+      <div class="footer-inner">
+        <div class="coupon-row">
+          <input id="coupon-input" type="text" placeholder="体验券码 VIP-XXXX" autocomplete="off" />
+          <button id="btn-redeem" class="btn btn-ghost btn-sm" type="button">兑换</button>
+        </div>
+        <button id="btn-feedback-open" class="btn btn-ghost btn-sm" type="button">提交反馈</button>
       </div>
-      <button id="btn-reset" class="btn btn-ghost" type="button">重新合盘</button>
-    </section>
-  </main>
+    </footer>
+  </div>
 
   <!-- 反馈弹窗 -->
   <div class="modal" id="feedback-modal" hidden>
     <div class="modal-backdrop" id="feedback-backdrop"></div>
     <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="feedback-title">
-      <h3 class="modal-title" id="feedback-title">提交反馈 · 领取 VIP 体验券</h3>
-      <p class="modal-tip">写下 20-200 字的真实感受或建议，通过后立即获得一张 VIP-XXXX 体验券（兑 5 虚拟币）。</p>
+      <h3 class="modal-title" id="feedback-title">提交反馈 · 领取体验券</h3>
+      <p class="modal-tip">写下 20-200 字的真实感受或建议，通过后获得一张 VIP-XXXX 体验券。</p>
 
       <textarea
         id="feedback-text"
         class="modal-textarea"
         maxlength="200"
-        placeholder="例如：希望合盘结果能生成分享链接，直接发给朋友……"
+        placeholder="例如：希望合盘结果能直接生成分享链接……"
       ></textarea>
 
       <div class="modal-meta">
@@ -646,8 +795,8 @@
       </div>
 
       <div class="modal-actions">
-        <button class="btn btn-ghost" id="btn-feedback-cancel" type="button">取消</button>
-        <button class="btn btn-primary" id="btn-feedback-submit" type="button">提交并领取</button>
+        <button class="btn btn-ghost btn-sm" id="btn-feedback-cancel" type="button">取消</button>
+        <button class="btn btn-primary btn-sm" id="btn-feedback-submit" type="button">提交并领取</button>
       </div>
     </div>
   </div>
@@ -1170,9 +1319,9 @@ function analyzeCouple(tokenA, tokenB) {
 
 
 
-const COLOR_A = '#ff4d8d'; // OC1 实线
-const COLOR_B = '#4dd0ff'; // OC2 虚线
-const COLOR_DERIVED = '#8b6cff';
+const COLOR_A = '#e8e8f2'; // OC1：冷白
+const COLOR_B = '#8ea2ff'; // OC2：雾蓝
+const COLOR_DERIVED = '#b9c4ff';
 
 const FONT_FAMILY = '"Noto Sans SC", "PingFang SC", "Microsoft YaHei", system-ui, sans-serif';
 
@@ -1297,17 +1446,17 @@ function renderOverlayRadar(dom, dataA, dataB) {
           {
             name: nameA,
             value: toSeriesValue(dataA),
-            lineStyle: { width: 2.5, color: COLOR_A },
+            lineStyle: { width: 2, color: COLOR_A },
             itemStyle: { color: COLOR_A },
-            areaStyle: { color: 'rgba(255, 77, 141, 0.20)' },
+            areaStyle: { color: 'rgba(232, 232, 242, 0.10)' },
           },
           {
             name: nameB,
             value: toSeriesValue(dataB),
             // 虚线 + 50% 透明度
-            lineStyle: { width: 2, type: 'dashed', color: 'rgba(77, 208, 255, 0.5)' },
-            itemStyle: { color: 'rgba(77, 208, 255, 0.5)' },
-            areaStyle: { color: 'rgba(77, 208, 255, 0.08)' },
+            lineStyle: { width: 1.6, type: 'dashed', color: 'rgba(142, 162, 255, 0.6)' },
+            itemStyle: { color: 'rgba(142, 162, 255, 0.6)' },
+            areaStyle: { color: 'rgba(142, 162, 255, 0.10)' },
           },
         ],
       },
@@ -1372,9 +1521,9 @@ function renderDerivedRadar(dom, derivedData) {
           {
             name: '合盘结果',
             value: data,
-            lineStyle: { width: 2.5, color: COLOR_DERIVED },
-            itemStyle: { color: '#c0b0ff', borderColor: COLOR_DERIVED, borderWidth: 1 },
-            areaStyle: { color: 'rgba(139, 108, 255, 0.26)' },
+            lineStyle: { width: 2, color: COLOR_DERIVED },
+            itemStyle: { color: '#dfe4ff', borderColor: COLOR_DERIVED, borderWidth: 1 },
+            areaStyle: { color: 'rgba(185, 196, 255, 0.16)' },
             label: {
               show: true,
               color: '#e8e9f5',
@@ -1442,9 +1591,9 @@ function renderOCRadar(dom, data, color = COLOR_A) {
           {
             name: seriesName(data, 'OC'),
             value: toSeriesValue(data),
-            lineStyle: { width: 2.5, color },
+            lineStyle: { width: 2, color },
             itemStyle: { color },
-            areaStyle: { color: withAlpha(color, 0.18) },
+            areaStyle: { color: withAlpha(color, 0.14) },
           },
         ],
       },
@@ -1660,12 +1809,15 @@ const MATCH_ENTRIES = {
 
 const nodes = {
   nicknameInput: document.getElementById('nickname-input'),
-  characterInput: document.getElementById('character-input'),
   registerBtn: document.getElementById('btn-register'),
   registerKey: document.getElementById('register-key'),
   keyInput: document.getElementById('key-input'),
   loginBtn: document.getElementById('btn-login'),
   session: document.getElementById('session-status'),
+  sessionApp: document.getElementById('session-status-app'),
+  gate: document.getElementById('screen-gate'),
+  app: document.getElementById('screen-app'),
+  characterInput: document.getElementById('character-input'),
   fileInput: document.getElementById('file-input'),
   fileName: document.getElementById('file-name'),
   uploadBtn: document.getElementById('btn-upload'),
@@ -1755,14 +1907,30 @@ function describeError(error) {
 
 function renderSession() {
   const user = state.user;
-  if (!user) {
-    nodes.session.textContent = '未登录';
-    nodes.session.classList.remove('is-online');
-    return;
+  const text = user
+    ? `${user.nickname} · 余额 ${Number.isFinite(user.balance) ? user.balance : 0} 点`
+    : '未登录';
+
+  if (nodes.session) {
+    nodes.session.textContent = text;
+    nodes.session.classList.toggle('is-online', Boolean(user));
   }
-  const balance = Number.isFinite(user.balance) ? user.balance : 0;
-  nodes.session.textContent = `${user.nickname} · 余额 ${balance} 点`;
-  nodes.session.classList.add('is-online');
+  if (nodes.sessionApp) {
+    nodes.sessionApp.textContent = text;
+    nodes.sessionApp.classList.toggle('is-online', Boolean(user));
+  }
+}
+
+// 第一幕 -> 第二幕
+function showApp() {
+  if (!nodes.gate || !nodes.app || !nodes.app.hidden) return;
+  nodes.gate.classList.add('is-leaving');
+  window.setTimeout(() => {
+    nodes.gate.hidden = true;
+    nodes.gate.classList.remove('is-active', 'is-leaving');
+    nodes.app.hidden = false;
+    requestAnimationFrame(() => nodes.app.classList.add('is-active'));
+  }, 400);
 }
 
 function applySession(data) {
@@ -1772,6 +1940,7 @@ function applySession(data) {
   nodes.registerKey.textContent = data.key;
   nodes.keyInput.value = data.key;
   renderSession();
+  showApp();
 }
 
 /* ---------------- 注册 / 登录 ---------------- */
@@ -1861,6 +2030,15 @@ nodes.fileInput.addEventListener('change', () => {
     if (text.length > TEXT_LIMIT) {
       nodes.fileName.textContent = `文本 ${text.length} 字符，超过上限 ${TEXT_LIMIT}`;
       alert(`文本长度 ${text.length} 字符，超过上限 ${TEXT_LIMIT} 字符`);
+      nodes.fileInput.value = '';
+      return;
+    }
+
+    // 非 UTF-8 的 TXT 会被读成乱码，模型接到乱码就会返回空内容
+    const broken = (text.match(/\uFFFD/g) || []).length;
+    if (broken > text.length * 0.02) {
+      nodes.fileName.textContent = '文件编码异常，疑似非 UTF-8';
+      alert('这个 TXT 不是 UTF-8 编码（读出来是乱码）。\n用记事本打开 → 文件 → 另存为 → 编码选 UTF-8 → 再上传。');
       nodes.fileInput.value = '';
       return;
     }
@@ -2131,6 +2309,12 @@ nodes.redeemBtn.addEventListener('click', async () => {
 /* ---------------- 启动：自动登录 ---------------- */
 
 (async function boot() {
+  // 第一幕淡入
+  if (nodes.gate) {
+    nodes.gate.classList.add('is-active');
+    if (readStoredKey()) nodes.gate.classList.add('is-fast');
+  }
+
   const stored = readStoredKey();
   if (!stored) return;
 
