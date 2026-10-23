@@ -544,6 +544,27 @@ select.input {
   font-weight: 700;
 }
 
+.oc-del {
+  flex: none;
+  width: 22px;
+  height: 22px;
+  margin-left: 6px;
+  border-radius: 6px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 15px;
+  line-height: 1;
+  color: rgba(255, 143, 163, 0.55);
+  cursor: pointer;
+  transition: background 0.2s, color 0.2s;
+}
+
+.oc-del:hover {
+  background: rgba(255, 100, 120, 0.14);
+  color: #ff8fa3;
+}
+
 .pick-bar {
   display: flex;
   align-items: center;
@@ -2386,6 +2407,7 @@ const state = {
   selected: [],
   activeOc: null,
   matchA: null,
+  pairs: {},
   fileText: '',
   mode: 'file',
   screen: 'screen-1',
@@ -2724,7 +2746,36 @@ function renderOcList() {
       togglePick(oc.code);
     });
 
-    btn.append(main, pick);
+    const del = document.createElement('span');
+    del.className = 'oc-del';
+    del.textContent = '×';
+    del.title = '从列表移除（角色码仍然有效）';
+    del.addEventListener('click', async (event) => {
+      event.stopPropagation();
+
+      const choice = await ask(
+        '移除角色',
+        `把「${oc.name}」从你的列表里移除？角色码 ${oc.code} 仍然有效，你自己或别人都能再用它导入回来。`,
+        [
+          { label: '取消', value: 'cancel' },
+          { label: '移除', value: 'ok', primary: true },
+        ]
+      );
+      if (choice !== 'ok') return;
+
+      try {
+        await deleteOc(state.key, oc.code);
+        state.ocs = state.ocs.filter((item) => item.code !== oc.code);
+        state.selected = state.selected.filter((code) => code !== oc.code);
+        renderOcList();
+        fillSelects();
+        toast(`已移除「${oc.name}」`);
+      } catch (error) {
+        toast(error.message, 'err');
+      }
+    });
+
+    btn.append(main, pick, del);
     btn.addEventListener('click', () => openOc(oc));
     list.appendChild(btn);
   }
@@ -3254,10 +3305,18 @@ async function runDeepMatch(a, b, metrics) {
     // TODO 正式版在这里调用扣费接口
   }
 
-  // 已存档的组合直接回放
+  // 本地缓存先挡一层：保存过的组合不再请求模型
+  const cacheKey = [a.code, b.code].sort().join('|');
+  if (state.pairs[cacheKey]) {
+    showSavedRecord(state.pairs[cacheKey]);
+    return;
+  }
+
+  // 再问一次服务端（换设备/换会话也能命中）
   try {
     const got = await pairGet(state.key, a.code, b.code);
     if (got && got.record) {
+      state.pairs[cacheKey] = got.record;
       showSavedRecord(got.record);
       return;
     }
@@ -3319,6 +3378,7 @@ $('btn-deep-save').addEventListener('click', async () => {
     });
 
     showSavedRecord({ text });
+    state.pairs[[deepState.a.code, deepState.b.code].sort().join('|')] = { text };
     toast('已保存，这对角色不能再合盘');
   } catch (error) {
     toast(error.message, 'err');
