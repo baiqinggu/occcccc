@@ -396,42 +396,60 @@ const PARSE_SYSTEM_PROMPT = `你是「OC 心理侧写引擎」的核心分析器
 {"scores":{"empathy":0,"order":0,"intellect":0,"vitality":0,"pride":0,"dominance":0,"self_destruction":0,"masochism":0,"obsession":0,"destruction":0},"review":"……","dimensions":{"empathy":"……","order":"……","intellect":"……","vitality":"……","pride":"……","dominance":"……","self_destruction":"……","masochism":"……","obsession":"……","destruction":"……"}}
 上面的 0 与省略号只是占位，务必替换为真实内容。`;
 
-const DEEP_MATCH_SYSTEM_PROMPT = `你是一位同人圈的资深“神仙太太”和心理学侧写师。你的任务是根据两位角色的十维人格数据和背景，撰写一段极具张力、充满宿命感或戏剧冲突的关系解析。
+const DEEP_MATCH_SYSTEM_PROMPT = `你是一位同人圈最资深的“神仙太太”和命运侧写师。现在需要你根据两位OC的人格雷达数据、MBTI及背景，撰写一份极具张力、充满宿命感或戏剧冲突的深度关系解析。
 
-【核心写作规则，必须严格遵守】
-1. 视角与语调：以“旁观者/命运记录者”的冷酷且深情的口吻。用词要克制、感性、有极致的画面感和文学性。
-2. 绝对禁忌词：严禁使用“不是...而是...”、“仿佛”、“在这个世界里”、“毫无疑问”、“其实”、“也许”、“注定”等低级AI腔调和俗套词汇。不要感叹号。
-3. 场景自适应（极其重要）：
-   - 如果双方背景相容（如同属修仙界、现代、同人圈同个作品）：请在他们原生的世界观下，构建一个充满暗流涌动的初遇或交锋场景。
-   - 如果双方跨次元/背景差异极大（如修仙者x现代人）：请强行在他们之间撕开一个“时空交汇的悖论空间”（如末世废墟、侦探事务所、星际监狱、无限流主神空间），描写他们相遇时的极度违和感与致命吸引力。
-4. 数据应用：不要机械报数据。将两人的【最高维度】和【最低维度】进行碰撞拉扯，写出他们相处时的痛点、性缩力或性张力（如：高偏执遇上低共情，高自毁遇上高救赎）。
-5. 结构排版：严格按以下三段式输出，字数严格控制在 280-320 字之间。
-   【关系底色】用一句话点明这段关系的本质。
-   【情境侧写】具体描写一个冲突或互动的画面。
-   【宿命金句】用一句极具杀伤力的话作为结尾，余音绕梁。`;
+【全局要求】
+1. 视角：以旁观者/命运记录者的口吻，用词克制、感性、有极致的画面感和文学性。
+2. 禁忌：严禁使用“不是...而是...”、“仿佛”、“在这个世界里”、“毫无疑问”等低级AI腔调。不要感叹号。
+3. 跨次元处理：若背景不同，请强行将他们拉入一个虚构情境（如末世、星际监狱等）进行侧写。
+4. 核心逻辑：打破“平权”误区，结合十维数据中的极端项和反差项，写出畸形的权力结构、病态的拉扯或飞蛾扑火般的救赎。
+
+【输出结构（严格按此骨架输出，字数总计800-1000字左右）】
+
+一、 破局点（一句话定调）
+直击两人关系中最大的矛盾或最性感的张力。（示例：当“不怕死”的猎物遇到“好奇心旺盛”的捕食者，猎杀游戏演变成了畸形的双向驯服。）
+
+二、 固定维度一：身份与伪装（表层博弈）
+他们在社会/外界面前是什么人？在彼此面前又是什么人？谁在演？谁在看破不说破？
+
+三、 固定维度二：生死与底线（极端阈值）
+结合“自毁度、破坏欲、痛觉度”数据，分析如果发生生死危机，谁更疯？谁更在乎？
+
+四、 固定维度三：权力与掌控（上下位关系）
+结合“支配欲、自尊感、秩序感”数据，分析这段关系里谁是真正的掌控者？写出权力结构的博弈。
+
+五、 固定维度四：灵魂共振（阴暗面/废墟）
+他们为什么会互相吸引？他们共享了哪一块相同的创伤或偏执？
+
+六、 合盘最终批注（400-500字叙事性总结）
+请用充满画面感的文段，写出他们感情的底色（如：充满血腥味的利益交换与极感拉扯），并推演一个最终的宿命走向。`;
 
 function buildDeepMatchUserPrompt({ ocA, ocB, metrics }) {
+  const radarLine = (oc) => {
+    const data = oc.radarData && typeof oc.radarData === 'object' ? oc.radarData : {};
+    const parts = Object.entries(data).map(([label, value]) => `${label} ${value}`);
+    return parts.length ? parts.join('，') : '未提供';
+  };
+
   return [
     `角色A：${ocA.name}`,
     `角色A身份背景：${ocA.background}`,
     `角色A MBTI：${ocA.mbti}`,
-    `角色A最突出维度：${ocA.topTraits.join('、')}`,
-    `角色A最匮乏维度：${ocA.lowTrait}`,
+    `角色A十维数据：${radarLine(ocA)}`,
+    `角色A最高维度：${ocA.topTraits.join('、')}`,
+    `角色A最低维度：${ocA.lowTrait}`,
     '',
     `角色B：${ocB.name}`,
     `角色B身份背景：${ocB.background}`,
     `角色B MBTI：${ocB.mbti}`,
-    `角色B最突出维度：${ocB.topTraits.join('、')}`,
-    `角色B最匮乏维度：${ocB.lowTrait}`,
+    `角色B十维数据：${radarLine(ocB)}`,
+    `角色B最高维度：${ocB.topTraits.join('、')}`,
+    `角色B最低维度：${ocB.lowTrait}`,
     '',
     '衍生合盘数据：',
-    `冲突指数：${metrics.conflict}`,
-    `救赎概率：${metrics.salvation}`,
-    `掌控平衡：${metrics.control}`,
-    `疯狂共振：${metrics.resonance}`,
-    `痛觉链接：${metrics.painLink}`,
+    `冲突指数${metrics.conflict}，救赎概率${metrics.salvation}，掌控平衡${metrics.control}，疯狂共振${metrics.resonance}，痛觉链接${metrics.painLink}。`,
     '',
-    '请为他们的关系撰写深度解析，直接输出解析内容，无需任何多余的解释或问候。',
+    '请开始你的侧写，直接输出内容，无需废话。',
   ].join('\n');
 }
 
@@ -1189,6 +1207,7 @@ function sanitizeOcInput(raw) {
   const mbti = String(source.mbti || '').toUpperCase();
 
   return {
+    code: String(source.code || '').trim().toUpperCase(),
     name: shortText(source.name, 32),
     background: shortText(source.background, 60) || '未注明',
     mbti: /^[EI][NS][TF][JP]$/.test(mbti) ? mbti : '未注明',
@@ -1214,9 +1233,96 @@ function sanitizeMetrics(raw) {
   };
 }
 
+function normalizeOcCode(raw) {
+  const value = String(raw || '').trim().toUpperCase();
+  const code = value.startsWith(`${OC_PREFIX}-`) ? value : `${OC_PREFIX}-${value}`;
+  if (!OC_CODE_PATTERN.test(code)) {
+    throw new HttpError(400, 'INVALID_OC_CODE', '角色码格式应为 OC-XXXX');
+  }
+  return code;
+}
+
+function pairStorageKey(accountKey, codeA, codeB) {
+  const [first, second] = [codeA, codeB].sort();
+  return `pair:${accountKey}:${first}_${second}`;
+}
+
+async function getPair(env, accountKey, codeA, codeB) {
+  return kvGet(env, pairStorageKey(accountKey, codeA, codeB));
+}
+
+// POST /api/pair-get { key, codeA, codeB } -> { record|null }
+async function handlePairGet(request, env) {
+  const body = await readJsonBody(request);
+  const key = normalizeKey(body.key);
+  const codeA = normalizeOcCode(body.codeA);
+  const codeB = normalizeOcCode(body.codeB);
+
+  const record = await getPair(env, key, codeA, codeB);
+  return { record: record || null };
+}
+
+// POST /api/pair-save { key, codeA, codeB, nameA, nameB, metrics, text } -> { record }
+async function handlePairSave(request, env) {
+  const body = await readJsonBody(request);
+  const key = normalizeKey(body.key);
+  const codeA = normalizeOcCode(body.codeA);
+  const codeB = normalizeOcCode(body.codeB);
+
+  if (codeA === codeB) {
+    throw new HttpError(400, 'INVALID_PAIR', '不能和自己合盘');
+  }
+
+  const text = shortText(body.text, 6000);
+  if (!text) throw new HttpError(400, 'EMPTY_TEXT', '没有可保存的解析内容');
+
+  const existed = await getPair(env, key, codeA, codeB);
+  if (existed) {
+    throw new HttpError(409, 'PAIR_LOCKED', '这对角色已经保存过合盘记录，不能再次推演');
+  }
+
+  const record0 = await getUser(env, key);
+  if (!record0) throw new HttpError(404, 'USER_NOT_FOUND', '灵魂契约不存在或已失效');
+  const user = reviveUser(record0);
+
+  const ownsBoth = user.oc_records.includes(codeA) && user.oc_records.includes(codeB);
+  if (!ownsBoth) throw new HttpError(403, 'NOT_OWNED', '这两个角色不在当前账号里');
+
+  const record = {
+    id: `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 6)}`,
+    codeA,
+    codeB,
+    nameA: shortText(body.nameA, 32),
+    nameB: shortText(body.nameB, 32),
+    metrics: sanitizeMetrics(body.metrics),
+    text,
+    createdAt: new Date().toISOString(),
+  };
+
+  await kvPut(env, pairStorageKey(key, codeA, codeB), record);
+  return { record };
+}
+
 // POST /api/deep-match -> text/event-stream（SSE 透传）
 async function handleDeepMatch(request, env) {
   const body = await readJsonBody(request);
+  const key = normalizeKey(body.key);
+
+  const ocA = sanitizeOcInput(body.ocA);
+  const ocB = sanitizeOcInput(body.ocB);
+
+  if (!ocA.name || !ocB.name) {
+    throw new HttpError(400, 'INVALID_PAYLOAD', '缺少角色信息');
+  }
+
+  const codeA = ocA.code ? normalizeOcCode(ocA.code) : '';
+  const codeB = ocB.code ? normalizeOcCode(ocB.code) : '';
+
+  // 已经保存过的组合：不再消耗模型额度，直接回放记录
+  if (codeA && codeB && codeA !== codeB) {
+    const existed = await getPair(env, key, codeA, codeB);
+    if (existed) return { locked: true, record: existed };
+  }
 
   const ip =
     request.headers.get('cf-connecting-ip') ||
@@ -1227,12 +1333,6 @@ async function handleDeepMatch(request, env) {
     throw new HttpError(429, 'RATE_LIMITED', '命运推演得太快了，一分钟最多三次，稍后再试');
   }
 
-  const ocA = sanitizeOcInput(body.ocA);
-  const ocB = sanitizeOcInput(body.ocB);
-  if (!ocA.name || !ocB.name) {
-    throw new HttpError(400, 'INVALID_PAYLOAD', '缺少角色信息');
-  }
-
   const metrics = sanitizeMetrics(body.metrics);
 
   const upstream = await streamDeepSeek(env, {
@@ -1240,7 +1340,7 @@ async function handleDeepMatch(request, env) {
     user: buildDeepMatchUserPrompt({ ocA, ocB, metrics }),
     model: MODEL_CHAT,
     temperature: 0.85,
-    maxTokens: 1200,
+    maxTokens: 2600,
   });
 
   return new Response(upstream.body, {
@@ -1279,6 +1379,8 @@ const ROUTES = [
   { method: 'POST', path: '/api/oc-import', handler: handleImportOc },
   { method: 'POST', path: '/api/oc-delete', handler: handleDeleteOc },
   { method: 'POST', path: '/api/deep-match', handler: handleDeepMatch },
+  { method: 'POST', path: '/api/pair-get', handler: handlePairGet },
+  { method: 'POST', path: '/api/pair-save', handler: handlePairSave },
   { method: 'POST', path: '/api/feedback', handler: handleFeedback },
   { method: 'POST', path: '/api/use-coupon', handler: handleUseCoupon },
 ].map((route) => ({ ...route, ...compilePath(route.path) }));
