@@ -438,6 +438,7 @@ function buildDeepMatchUserPrompt({ ocA, ocB, metrics }) {
     `角色A十维数据：${radarLine(ocA)}`,
     `角色A最高维度：${ocA.topTraits.join('、')}`,
     `角色A最低维度：${ocA.lowTrait}`,
+    `角色A原文节选：${ocA.excerpt ? String(ocA.excerpt).slice(0, 4000) : '未保存'}`,
     '',
     `角色B：${ocB.name}`,
     `角色B身份背景：${ocB.background}`,
@@ -445,10 +446,12 @@ function buildDeepMatchUserPrompt({ ocA, ocB, metrics }) {
     `角色B十维数据：${radarLine(ocB)}`,
     `角色B最高维度：${ocB.topTraits.join('、')}`,
     `角色B最低维度：${ocB.lowTrait}`,
+    `角色B原文节选：${ocB.excerpt ? String(ocB.excerpt).slice(0, 4000) : '未保存'}`,
     '',
     '衍生合盘数据：',
     `冲突指数${metrics.conflict}，救赎概率${metrics.salvation}，掌控平衡${metrics.control}，疯狂共振${metrics.resonance}，痛觉链接${metrics.painLink}。`,
     '',
+    '原文节选只用于提取细节与语感，不要照抄句子。',
     '请开始你的侧写，直接输出内容，无需废话。',
   ].join('\n');
 }
@@ -597,6 +600,7 @@ const OC_CODE_ATTEMPTS = 8;
 const DEEP_MATCH_LIMIT = 3; // 同一 IP 每分钟最多 3 次
 const DEEP_MATCH_WINDOW = 60;
 const DEEP_MATCH_COST = 1; // 正式版每次 1 币（测试期前端跳过）
+const DEEP_EXCERPT_LIMIT = 4000; // 每个角色最多带多少原文进模型
 
 const CORS_HEADERS = {
   'Access-Control-Allow-Origin': '*',
@@ -988,6 +992,8 @@ async function handleParse(request, env) {
   };
 
   await putOc(env, profile);
+  // 原文单独存，避免列表接口把 3 万字一起吐回前端
+  await kvPut(env, `octext:${profile.code}`, { text, createdAt: profile.createdAt });
 
   const records = Array.isArray(user.oc_records) ? [...user.oc_records] : [];
   if (!records.includes(profile.code)) records.push(profile.code);
@@ -1334,6 +1340,15 @@ async function handleDeepMatch(request, env) {
   }
 
   const metrics = sanitizeMetrics(body.metrics);
+
+  // 把两个角色的原文带上，模型才能真正读到"文档"而不是只有分数
+  const [textA, textB] = await Promise.all([
+    codeA ? kvGet(env, `octext:${codeA}`) : null,
+    codeB ? kvGet(env, `octext:${codeB}`) : null,
+  ]);
+
+  if (textA && textA.text) ocA.excerpt = String(textA.text).slice(0, DEEP_EXCERPT_LIMIT);
+  if (textB && textB.text) ocB.excerpt = String(textB.text).slice(0, DEEP_EXCERPT_LIMIT);
 
   const upstream = await streamDeepSeek(env, {
     system: DEEP_MATCH_SYSTEM_PROMPT,
