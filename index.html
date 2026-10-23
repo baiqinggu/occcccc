@@ -727,6 +727,82 @@ select.input {
 
 .entry__body { margin: 0; font-size: 12.5px; line-height: 1.95; color: var(--muted); }
 
+/* ================= 深度拟合 ================= */
+
+.deep {
+  margin-top: 18px;
+  padding: 22px 24px;
+  border: 1px solid rgba(154, 171, 255, 0.22);
+  border-radius: var(--radius);
+  background: linear-gradient(180deg, rgba(154, 171, 255, 0.07), rgba(154, 171, 255, 0.02));
+  animation: pop 0.4s var(--ease);
+}
+
+.deep__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.deep__head .eyebrow { margin: 0; }
+
+.deep__badge {
+  padding: 4px 10px;
+  border: 1px solid rgba(154, 171, 255, 0.35);
+  border-radius: 999px;
+  font-size: 10px;
+  letter-spacing: 0.18em;
+  color: #c9d3ff;
+}
+
+.deep__badge.is-live { border-color: rgba(127, 224, 176, 0.45); color: #bff6de; }
+
+.deep__body {
+  font-size: 14px;
+  line-height: 2.1;
+  color: #e6e9f8;
+  white-space: pre-wrap;
+  min-height: 28px;
+}
+
+.deep__body.is-typing::after {
+  content: "";
+  display: inline-block;
+  width: 7px;
+  height: 15px;
+  margin-left: 3px;
+  background: #9aabff;
+  vertical-align: -2px;
+  animation: caret 1s steps(2) infinite;
+}
+
+@keyframes caret {
+  0%, 50% { opacity: 1; }
+  50.01%, 100% { opacity: 0; }
+}
+
+.dots { display: inline-flex; gap: 4px; margin-left: 6px; vertical-align: 2px; }
+
+.dots i {
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: #9aabff;
+  animation: dotPulse 1.1s infinite ease-in-out;
+}
+
+.dots i:nth-child(2) { animation-delay: 0.15s; }
+.dots i:nth-child(3) { animation-delay: 0.3s; }
+
+@keyframes dotPulse {
+  0%, 100% { opacity: 0.25; transform: translateY(0); }
+  50% { opacity: 1; transform: translateY(-3px); }
+}
+
+.field--wide { grid-column: 1 / -1; margin-bottom: 16px; }
+
 .explode-anim { transform: scale(1.15); opacity: 0; transition: all 0.5s ease-in-out; }
 
 /* ================= 弹窗 / Toast ================= */
@@ -882,6 +958,11 @@ select.input {
           </div>
         </div>
 
+        <div class="field field--wide">
+          <label class="label" for="background-input">身份背景（可选，合盘时用来定场景）</label>
+          <input id="background-input" class="input" type="text" maxlength="60" placeholder="例：血族亲王 / 废土拾荒者 / 修仙界剑修" autocomplete="off" />
+        </div>
+
         <div class="tabs" role="tablist">
           <button class="tab is-on" type="button" data-tab="file" role="tab">上传 TXT 文件</button>
           <button class="tab" type="button" data-tab="text" role="tab">直接输入文本</button>
@@ -1013,6 +1094,14 @@ select.input {
           <p class="entry__body" id="entry-desc"></p>
         </div>
       </div>
+
+      <section class="deep" id="deep-panel" hidden>
+        <div class="deep__head">
+          <p class="eyebrow">深度拟合</p>
+          <span class="deep__badge" id="deep-badge">命运推演</span>
+        </div>
+        <div class="deep__body" id="deep-body"></div>
+      </section>
     </main>
   </section>
 
@@ -2071,12 +2160,77 @@ function login(key) {
  * @param {string} text 角色文本
  * @returns {Promise<{ scores: object, cost: number, balance: number, model: string }>}
  */
-function parseText(key, text, name, mbti) {
+function parseText(key, text, name, mbti, background) {
   return request('/api/parse', {
     method: 'POST',
-    body: { key, text, name, mbti: mbti || '' },
+    body: { key, text, name, mbti: mbti || '', background: background || '' },
     timeout: 180000, // reasoner 推理可能较慢
   });
+}
+
+/**
+ * 深度拟合：SSE 流式读取
+ * @param {object} payload { ocA, ocB, metrics }
+ * @param {{ onDelta?: (delta: string, full: string) => void }} options
+ * @returns {Promise<string>} 完整文本
+ */
+async function deepMatch(payload, { onDelta } = {}) {
+  if (!API_BASE || API_BASE.includes('你的Worker域名') || !/^https?:\/\//.test(API_BASE)) {
+    throw new Error('尚未配置 Worker 域名：请把文件里的 API_BASE 改成你的 Worker 地址');
+  }
+
+  const response = await fetch(`${API_BASE}/api/deep-match`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', Accept: 'text/event-stream' },
+    body: JSON.stringify(payload),
+  });
+
+  if (!response.ok || !response.body) {
+    const text = await response.text().catch(() => '');
+    let message = `请求失败（HTTP ${response.status}）`;
+    try {
+      message = JSON.parse(text).error.message || message;
+    } catch {
+      /* 保持默认文案 */
+    }
+    throw new Error(message);
+  }
+
+  const reader = response.body.getReader();
+  const decoder = new TextDecoder();
+  let buffer = '';
+  let full = '';
+
+  for (;;) {
+    const { value, done } = await reader.read();
+    if (done) break;
+
+    buffer += decoder.decode(value, { stream: true });
+    const lines = buffer.split('\n');
+    buffer = lines.pop() || '';
+
+    for (const line of lines) {
+      const trimmed = line.trim();
+      if (!trimmed.startsWith('data:')) continue;
+
+      const chunk = trimmed.slice(5).trim();
+      if (!chunk || chunk === '[DONE]') continue;
+
+      try {
+        const json = JSON.parse(chunk);
+        const choice = json.choices && json.choices[0];
+        const delta = (choice && choice.delta && choice.delta.content) || '';
+        if (delta) {
+          full += delta;
+          if (onDelta) onDelta(delta, full);
+        }
+      } catch {
+        /* 心跳或不完整行，跳过 */
+      }
+    }
+  }
+
+  return full;
 }
 
 /**
@@ -2139,6 +2293,10 @@ function useCoupon(key, coupon) {
 const STORAGE_KEY = 'oc_engine_key';
 const TEXT_LIMIT = 30000;
 const DERIVED_ORDER = ['conflict', 'redemption', 'balance', 'resonance', 'painLink'];
+
+// 深度拟合：测试期跳过扣费
+const IS_BETA = true;
+const DEEP_MATCH_COST = 1;
 
 // 星空配色：默认冷蓝，神性刺破转金，恶性刺破转红
 const SKY = {
@@ -2366,6 +2524,12 @@ function disposeChartById(id) {
 function resetMatchView() {
   $('panel-derived').hidden = true;
   $('radar-pair').hidden = false;
+
+  const deepPanel = $('deep-panel');
+  if (deepPanel) {
+    deepPanel.hidden = true;
+    $('deep-body').textContent = '';
+  }
   $('radar-box-a').classList.remove('explode-anim');
   $('radar-box-b').classList.remove('explode-anim');
 
@@ -2760,7 +2924,7 @@ $('btn-upload').addEventListener('click', async () => {
 
   setBusy(button, true, '侧写中…');
   try {
-    const data = await parseText(state.key, content, name, mbti);
+    const data = await parseText(state.key, content, name, mbti, $('background-input').value.trim());
     const oc = data.profile;
 
     if (overwriteCode) {
@@ -2900,6 +3064,93 @@ function pickEntry(derived) {
   return pool[secondary >= 60 ? 1 : 0] || pool[0];
 }
 
+/* ---------------- 深度拟合 ---------------- */
+
+function traitsOf(oc) {
+  const pairs = Object.entries(oc.scores || {}).sort((x, y) => y[1] - x[1]);
+  return {
+    top: pairs.slice(0, 2).map(([key]) => DIMENSION_LABELS[key]),
+    low: pairs.length ? DIMENSION_LABELS[pairs[pairs.length - 1][0]] : '未注明',
+  };
+}
+
+function buildDeepPayload(a, b, metrics) {
+  const pack = (oc) => {
+    const { top, low } = traitsOf(oc);
+    return {
+      name: oc.name,
+      background: oc.background || '未注明',
+      mbti: oc.mbti || '未注明',
+      topTraits: top.length ? top : ['未注明'],
+      lowTrait: low,
+    };
+  };
+
+  return {
+    ocA: pack(a),
+    ocB: pack(b),
+    metrics: {
+      conflict: metrics.conflict,
+      salvation: metrics.redemption,
+      control: metrics.balance,
+      resonance: metrics.resonance,
+      painLink: metrics.painLink,
+    },
+  };
+}
+
+async function runDeepMatch(a, b, metrics) {
+  const panel = $('deep-panel');
+  const body = $('deep-body');
+  const badge = $('deep-badge');
+  if (!panel || !body) return;
+
+  panel.hidden = false;
+  body.classList.remove('is-typing');
+  badge.textContent = '命运推演中';
+  badge.classList.remove('is-live');
+  body.innerHTML = '正在推演你们的命数<span class="dots"><i></i><i></i><i></i></span>';
+
+  if (!IS_BETA) {
+    const balance = state.user ? state.user.balance : 0;
+    if (balance < DEEP_MATCH_COST) {
+      panel.hidden = true;
+      toast(`深度拟合需要 ${DEEP_MATCH_COST} 枚虚拟币，余额不足`, 'err');
+      return;
+    }
+    // TODO 正式版在这里调用扣费接口
+  }
+
+  try {
+    let received = '';
+    await deepMatch(buildDeepPayload(a, b, metrics), {
+      onDelta: (_delta, full) => {
+        received = full;
+        body.textContent = full;
+        body.classList.add('is-typing');
+      },
+    });
+
+    body.classList.remove('is-typing');
+
+    if (!received.trim()) {
+      body.textContent = '这次没有推演出结果，换一组再试。';
+      badge.textContent = '推演中断';
+    } else {
+      badge.textContent = '推演完成';
+      badge.classList.add('is-live');
+    }
+  } catch (error) {
+    body.classList.remove('is-typing');
+    body.textContent = `推演中断：${error.message}`;
+    badge.textContent = '推演失败';
+    toast(`深度拟合失败：${error.message}`, 'err');
+    if (!IS_BETA) {
+      // TODO 正式版：退回虚拟币
+    }
+  }
+}
+
 let matching = false;
 
 $('btn-match').addEventListener('click', async () => {
@@ -2955,6 +3206,7 @@ $('btn-match').addEventListener('click', async () => {
     $('entry-desc').textContent = entry.desc;
 
     toast('合盘完成');
+    runDeepMatch(a, b, derived);
   } catch (error) {
     toast(error.message, 'err');
   } finally {
