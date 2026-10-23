@@ -803,6 +803,17 @@ select.input {
 
 .field--wide { grid-column: 1 / -1; margin-bottom: 16px; }
 
+.deep__actions {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-top: 16px;
+  padding-top: 14px;
+  border-top: 1px solid rgba(154, 171, 255, 0.16);
+}
+
+.deep__body.is-locked { color: #dfe2f2; }
+
 .explode-anim { transform: scale(1.15); opacity: 0; transition: all 0.5s ease-in-out; }
 
 /* ================= 弹窗 / Toast ================= */
@@ -1101,6 +1112,11 @@ select.input {
           <span class="deep__badge" id="deep-badge">命运推演</span>
         </div>
         <div class="deep__body" id="deep-body"></div>
+        <div class="deep__actions" id="deep-actions" hidden>
+          <button id="btn-deep-reroll" class="btn btn-quiet btn-sm" type="button">重新推演（仅一次）</button>
+          <button id="btn-deep-switch" class="btn btn-quiet btn-sm" type="button" hidden>看另一版</button>
+          <button id="btn-deep-save" class="btn btn-solid btn-sm" type="button">保存这一版</button>
+        </div>
       </section>
     </main>
   </section>
@@ -2169,10 +2185,10 @@ function parseText(key, text, name, mbti, background) {
 }
 
 /**
- * 深度拟合：SSE 流式读取
- * @param {object} payload { ocA, ocB, metrics }
+ * 深度拟合：SSE 流式读取；若该组合已存档，后端会直接返回 JSON
+ * @param {object} payload { key, ocA, ocB, metrics }
  * @param {{ onDelta?: (delta: string, full: string) => void }} options
- * @returns {Promise<string>} 完整文本
+ * @returns {Promise<{ locked: boolean, record: object|null, text: string }>}
  */
 async function deepMatch(payload, { onDelta } = {}) {
   if (!API_BASE || API_BASE.includes('你的Worker域名') || !/^https?:\/\//.test(API_BASE)) {
@@ -2184,6 +2200,17 @@ async function deepMatch(payload, { onDelta } = {}) {
     headers: { 'Content-Type': 'application/json', Accept: 'text/event-stream' },
     body: JSON.stringify(payload),
   });
+
+  const type = response.headers.get('content-type') || '';
+
+  // 已存档：后端回的是 JSON，不是流
+  if (type.includes('application/json')) {
+    const json = await response.json().catch(() => null);
+    if (!response.ok || !json) {
+      throw new Error((json && json.error && json.error.message) || `请求失败（HTTP ${response.status}）`);
+    }
+    return { locked: true, record: json.data.record || null, text: (json.data.record && json.data.record.text) || '' };
+  }
 
   if (!response.ok || !response.body) {
     const text = await response.text().catch(() => '');
@@ -2230,7 +2257,22 @@ async function deepMatch(payload, { onDelta } = {}) {
     }
   }
 
-  return full;
+  return { locked: false, record: null, text: full };
+}
+
+/**
+ * 查询这对角色是否已有存档
+ * @returns {Promise<{ record: object|null }>}
+ */
+function pairGet(key, codeA, codeB) {
+  return request('/api/pair-get', { method: 'POST', body: { key, codeA, codeB } });
+}
+
+/**
+ * 保存合盘记录（保存后该组合锁定）
+ */
+function pairSave(payload) {
+  return request('/api/pair-save', { method: 'POST', body: payload, timeout: 30000 });
 }
 
 /**
@@ -2529,6 +2571,11 @@ function resetMatchView() {
   if (deepPanel) {
     deepPanel.hidden = true;
     $('deep-body').textContent = '';
+    if (typeof setDeepActions === 'function') setDeepActions({});
+    deepState.drafts = [];
+    deepState.active = 0;
+    deepState.rerollUsed = false;
+    deepState.locked = false;
   }
   $('radar-box-a').classList.remove('explode-anim');
   $('radar-box-b').classList.remove('explode-anim');
@@ -3066,6 +3113,16 @@ function pickEntry(derived) {
 
 /* ---------------- 深度拟合 ---------------- */
 
+const deepState = {
+  a: null,
+  b: null,
+  metrics: null,
+  drafts: [],
+  active: 0,
+  rerollUsed: false,
+  locked: false,
+};
+
 function traitsOf(oc) {
   const pairs = Object.entries(oc.scores || {}).sort((x, y) => y[1] - x[1]);
   return {
@@ -3074,42 +3131,118 @@ function traitsOf(oc) {
   };
 }
 
-function buildDeepPayload(a, b, metrics) {
-  const pack = (oc) => {
-    const { top, low } = traitsOf(oc);
-    return {
-      name: oc.name,
-      background: oc.background || '未注明',
-      mbti: oc.mbti || '未注明',
-      topTraits: top.length ? top : ['未注明'],
-      lowTrait: low,
-    };
+function radarDataOf(oc) {
+  const data = {};
+  for (const [key, label] of Object.entries(DIMENSION_LABELS)) {
+    const value = Number((oc.scores || {})[key]);
+    if (Number.isFinite(value)) data[label] = value;
+  }
+  return data;
+}
+
+function packOc(oc) {
+  const { top, low } = traitsOf(oc);
+  return {
+    code: oc.code,
+    name: oc.name,
+    background: oc.background || '未注明',
+    mbti: oc.mbti || '未注明',
+    topTraits: top.length ? top : ['未注明'],
+    lowTrait: low,
+    radarData: radarDataOf(oc),
+  };
+}
+
+function deepMetrics(metrics) {
+  return {
+    conflict: metrics.conflict,
+    salvation: metrics.redemption,
+    control: metrics.balance,
+    resonance: metrics.resonance,
+    painLink: metrics.painLink,
+  };
+}
+
+function setDeepActions(options = {}) {
+  const { reroll = false, switcher = false, save = false } = options;
+  $('btn-deep-reroll').hidden = !reroll;
+  $('btn-deep-switch').hidden = !switcher;
+  $('btn-deep-save').hidden = !save;
+  $('deep-actions').hidden = !(reroll || switcher || save);
+}
+
+function showSavedRecord(record) {
+  deepState.locked = true;
+  $('deep-panel').hidden = false;
+  $('deep-badge').textContent = '已存档';
+  $('deep-badge').classList.add('is-live');
+  $('deep-body').classList.remove('is-typing');
+  $('deep-body').textContent = record.text;
+  setDeepActions({});
+}
+
+async function generateDraft() {
+  const body = $('deep-body');
+  body.classList.remove('is-typing');
+  body.innerHTML = '正在推演你们的命数<span class="dots"><i></i><i></i><i></i></span>';
+
+  const payload = {
+    key: state.key,
+    ocA: packOc(deepState.a),
+    ocB: packOc(deepState.b),
+    metrics: deepMetrics(deepState.metrics),
   };
 
-  return {
-    ocA: pack(a),
-    ocB: pack(b),
-    metrics: {
-      conflict: metrics.conflict,
-      salvation: metrics.redemption,
-      control: metrics.balance,
-      resonance: metrics.resonance,
-      painLink: metrics.painLink,
+  const result = await deepMatch(payload, {
+    onDelta: (_delta, full) => {
+      body.textContent = full;
+      body.classList.add('is-typing');
     },
-  };
+  });
+
+  body.classList.remove('is-typing');
+
+  if (result.locked) {
+    if (result.record) showSavedRecord(result.record);
+    return;
+  }
+
+  const text = (result.text || '').trim();
+  if (!text) {
+    body.textContent = '这次没有推演出结果，换一组再试。';
+    return;
+  }
+
+  deepState.drafts.push(text);
+  deepState.active = deepState.drafts.length - 1;
+  body.textContent = text;
+
+  $('deep-badge').textContent = deepState.drafts.length > 1 ? `第 ${deepState.active + 1} 版` : '推演完成';
+  $('deep-badge').classList.add('is-live');
+
+  setDeepActions({
+    reroll: !deepState.rerollUsed && deepState.drafts.length < 2,
+    switcher: deepState.drafts.length > 1,
+    save: true,
+  });
 }
 
 async function runDeepMatch(a, b, metrics) {
   const panel = $('deep-panel');
-  const body = $('deep-body');
-  const badge = $('deep-badge');
-  if (!panel || !body) return;
-
   panel.hidden = false;
-  body.classList.remove('is-typing');
-  badge.textContent = '命运推演中';
-  badge.classList.remove('is-live');
-  body.innerHTML = '正在推演你们的命数<span class="dots"><i></i><i></i><i></i></span>';
+  $('deep-badge').textContent = '命运推演中';
+  $('deep-badge').classList.remove('is-live');
+  $('deep-body').classList.remove('is-typing');
+  $('deep-body').innerHTML = '正在推演你们的命数<span class="dots"><i></i><i></i><i></i></span>';
+  setDeepActions({});
+
+  deepState.a = a;
+  deepState.b = b;
+  deepState.metrics = metrics;
+  deepState.drafts = [];
+  deepState.active = 0;
+  deepState.rerollUsed = false;
+  deepState.locked = false;
 
   if (!IS_BETA) {
     const balance = state.user ? state.user.balance : 0;
@@ -3121,35 +3254,78 @@ async function runDeepMatch(a, b, metrics) {
     // TODO 正式版在这里调用扣费接口
   }
 
+  // 已存档的组合直接回放
   try {
-    let received = '';
-    await deepMatch(buildDeepPayload(a, b, metrics), {
-      onDelta: (_delta, full) => {
-        received = full;
-        body.textContent = full;
-        body.classList.add('is-typing');
-      },
-    });
-
-    body.classList.remove('is-typing');
-
-    if (!received.trim()) {
-      body.textContent = '这次没有推演出结果，换一组再试。';
-      badge.textContent = '推演中断';
-    } else {
-      badge.textContent = '推演完成';
-      badge.classList.add('is-live');
+    const got = await pairGet(state.key, a.code, b.code);
+    if (got && got.record) {
+      showSavedRecord(got.record);
+      return;
     }
+  } catch {
+    /* 查不到就继续生成 */
+  }
+
+  try {
+    await generateDraft();
   } catch (error) {
-    body.classList.remove('is-typing');
-    body.textContent = `推演中断：${error.message}`;
-    badge.textContent = '推演失败';
+    $('deep-body').classList.remove('is-typing');
+    $('deep-body').textContent = `推演中断：${error.message}`;
+    $('deep-badge').textContent = '推演失败';
     toast(`深度拟合失败：${error.message}`, 'err');
     if (!IS_BETA) {
       // TODO 正式版：退回虚拟币
     }
   }
 }
+
+$('btn-deep-reroll').addEventListener('click', async () => {
+  if (deepState.locked || deepState.rerollUsed || deepState.drafts.length >= 2) return;
+  if (!deepState.a || !deepState.b) return;
+
+  deepState.rerollUsed = true;
+  $('btn-deep-reroll').hidden = true;
+
+  try {
+    await generateDraft();
+  } catch (error) {
+    toast(`重新推演失败：${error.message}`, 'err');
+  }
+});
+
+$('btn-deep-switch').addEventListener('click', () => {
+  if (deepState.drafts.length < 2) return;
+  deepState.active = deepState.active === 0 ? 1 : 0;
+  $('deep-body').textContent = deepState.drafts[deepState.active];
+  $('deep-badge').textContent = `第 ${deepState.active + 1} 版`;
+});
+
+$('btn-deep-save').addEventListener('click', async () => {
+  if (deepState.locked) return;
+
+  const text = deepState.drafts[deepState.active];
+  if (!text) return;
+
+  const button = $('btn-deep-save');
+  setBusy(button, true, '保存中');
+  try {
+    await pairSave({
+      key: state.key,
+      codeA: deepState.a.code,
+      codeB: deepState.b.code,
+      nameA: deepState.a.name,
+      nameB: deepState.b.name,
+      metrics: deepMetrics(deepState.metrics),
+      text,
+    });
+
+    showSavedRecord({ text });
+    toast('已保存，这对角色不能再合盘');
+  } catch (error) {
+    toast(error.message, 'err');
+  } finally {
+    setBusy(button, false);
+  }
+});
 
 let matching = false;
 
