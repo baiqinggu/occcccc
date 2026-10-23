@@ -259,6 +259,48 @@ async function callDeepSeek(env, options = {}) {
 }
 
 /**
+ * 流式调用：直接返回上游 Response，由调用方透传给前端
+ */
+async function streamDeepSeek(env, options = {}) {
+  const {
+    system,
+    user,
+    model = MODEL_CHAT,
+    temperature = 0.85,
+    maxTokens = 1200,
+  } = options;
+
+  const apiKey = env && env.DEEPSEEK_API_KEY;
+  if (!apiKey) throw deepseekError('DEEPSEEK_KEY_MISSING', 'DeepSeek API Key 未配置', 500);
+
+  const messages = [];
+  if (system) messages.push({ role: 'system', content: system });
+  messages.push({ role: 'user', content: user });
+
+  const response = await fetch(API_ENDPOINT, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      Accept: 'text/event-stream',
+      Authorization: `Bearer ${apiKey}`,
+    },
+    body: JSON.stringify({ model, messages, stream: true, temperature, max_tokens: maxTokens }),
+  });
+
+  if (!response.ok || !response.body) {
+    const raw = await response.text().catch(() => '');
+    throw deepseekError(
+      'DEEPSEEK_HTTP_ERROR',
+      `DeepSeek 接口返回 ${response.status}`,
+      response.status === 429 ? 429 : 502,
+      raw.slice(0, 300)
+    );
+  }
+
+  return response;
+}
+
+/**
  * 从模型输出里提取 JSON：兼容代码围栏、前后废话、尾随逗号
  */
 function extractJson(content) {
@@ -353,6 +395,45 @@ const PARSE_SYSTEM_PROMPT = `你是「OC 心理侧写引擎」的核心分析器
 只输出一个 JSON 对象，结构如下，不要任何解释、前后缀或 markdown 代码块：
 {"scores":{"empathy":0,"order":0,"intellect":0,"vitality":0,"pride":0,"dominance":0,"self_destruction":0,"masochism":0,"obsession":0,"destruction":0},"review":"……","dimensions":{"empathy":"……","order":"……","intellect":"……","vitality":"……","pride":"……","dominance":"……","self_destruction":"……","masochism":"……","obsession":"……","destruction":"……"}}
 上面的 0 与省略号只是占位，务必替换为真实内容。`;
+
+const DEEP_MATCH_SYSTEM_PROMPT = `你是一位同人圈的资深“神仙太太”和心理学侧写师。你的任务是根据两位角色的十维人格数据和背景，撰写一段极具张力、充满宿命感或戏剧冲突的关系解析。
+
+【核心写作规则，必须严格遵守】
+1. 视角与语调：以“旁观者/命运记录者”的冷酷且深情的口吻。用词要克制、感性、有极致的画面感和文学性。
+2. 绝对禁忌词：严禁使用“不是...而是...”、“仿佛”、“在这个世界里”、“毫无疑问”、“其实”、“也许”、“注定”等低级AI腔调和俗套词汇。不要感叹号。
+3. 场景自适应（极其重要）：
+   - 如果双方背景相容（如同属修仙界、现代、同人圈同个作品）：请在他们原生的世界观下，构建一个充满暗流涌动的初遇或交锋场景。
+   - 如果双方跨次元/背景差异极大（如修仙者x现代人）：请强行在他们之间撕开一个“时空交汇的悖论空间”（如末世废墟、侦探事务所、星际监狱、无限流主神空间），描写他们相遇时的极度违和感与致命吸引力。
+4. 数据应用：不要机械报数据。将两人的【最高维度】和【最低维度】进行碰撞拉扯，写出他们相处时的痛点、性缩力或性张力（如：高偏执遇上低共情，高自毁遇上高救赎）。
+5. 结构排版：严格按以下三段式输出，字数严格控制在 280-320 字之间。
+   【关系底色】用一句话点明这段关系的本质。
+   【情境侧写】具体描写一个冲突或互动的画面。
+   【宿命金句】用一句极具杀伤力的话作为结尾，余音绕梁。`;
+
+function buildDeepMatchUserPrompt({ ocA, ocB, metrics }) {
+  return [
+    `角色A：${ocA.name}`,
+    `角色A身份背景：${ocA.background}`,
+    `角色A MBTI：${ocA.mbti}`,
+    `角色A最突出维度：${ocA.topTraits.join('、')}`,
+    `角色A最匮乏维度：${ocA.lowTrait}`,
+    '',
+    `角色B：${ocB.name}`,
+    `角色B身份背景：${ocB.background}`,
+    `角色B MBTI：${ocB.mbti}`,
+    `角色B最突出维度：${ocB.topTraits.join('、')}`,
+    `角色B最匮乏维度：${ocB.lowTrait}`,
+    '',
+    '衍生合盘数据：',
+    `冲突指数：${metrics.conflict}`,
+    `救赎概率：${metrics.salvation}`,
+    `掌控平衡：${metrics.control}`,
+    `疯狂共振：${metrics.resonance}`,
+    `痛觉链接：${metrics.painLink}`,
+    '',
+    '请为他们的关系撰写深度解析，直接输出解析内容，无需任何多余的解释或问候。',
+  ].join('\n');
+}
 
 function buildParseUserPrompt(text, characterName, mbti) {
   const lines = [
@@ -493,6 +574,11 @@ const COUPON_ISSUE_ATTEMPTS = 8;
 const OC_PREFIX = 'OC';
 const OC_CODE_PATTERN = /^OC-[A-HJ-NP-Z2-9]{4}$/;
 const OC_CODE_ATTEMPTS = 8;
+
+// 深度拟合：限流 + 计费
+const DEEP_MATCH_LIMIT = 3; // 同一 IP 每分钟最多 3 次
+const DEEP_MATCH_WINDOW = 60;
+const DEEP_MATCH_COST = 1; // 正式版每次 1 币（测试期前端跳过）
 
 const CORS_HEADERS = {
   'Access-Control-Allow-Origin': '*',
@@ -783,6 +869,8 @@ async function handleParse(request, env) {
   const mbtiRaw = typeof body.mbti === 'string' ? body.mbti.trim().toUpperCase() : '';
   const mbti = /^[EI][NS][TF][JP]$/.test(mbtiRaw) ? mbtiRaw : '';
 
+  const background = shortText(body.background, 60);
+
   const text = cleanText(body.text);
   if (!text) throw new HttpError(400, 'EMPTY_TEXT', '文本清洗后为空');
 
@@ -873,6 +961,7 @@ async function handleParse(request, env) {
     code: await issueOcCode(env),
     name: characterName,
     mbti,
+    background,
     scores,
     review: shortText(finalParsed.review, 520),
     dimensions: sanitizeDimensions(finalParsed.dimensions),
@@ -1075,6 +1164,96 @@ async function handleUseCoupon(request, env) {
   return { coupon, coupons, balance, reward: COUPON_REWARD };
 }
 
+/* ================= 深度拟合（Deep Match） ================= */
+
+async function hitRateLimit(env, ip) {
+  const bucket = Math.floor(Date.now() / (DEEP_MATCH_WINDOW * 1000));
+  const key = `rl:dm:${ip}:${bucket}`;
+  const current = Number(await kvGet(env, key, { raw: true })) || 0;
+  if (current >= DEEP_MATCH_LIMIT) return true;
+
+  await kvPut(env, key, String(current + 1), { expirationTtl: DEEP_MATCH_WINDOW + 10 });
+  return false;
+}
+
+function sanitizeOcInput(raw) {
+  const source = raw && typeof raw === 'object' ? raw : {};
+
+  const topTraits = Array.isArray(source.topTraits)
+    ? source.topTraits
+        .filter((item) => typeof item === 'string' && item.trim())
+        .slice(0, 3)
+        .map((item) => item.trim().slice(0, 12))
+    : [];
+
+  const mbti = String(source.mbti || '').toUpperCase();
+
+  return {
+    name: shortText(source.name, 32),
+    background: shortText(source.background, 60) || '未注明',
+    mbti: /^[EI][NS][TF][JP]$/.test(mbti) ? mbti : '未注明',
+    topTraits: topTraits.length ? topTraits : ['未注明的突出维度'],
+    lowTrait: shortText(source.lowTrait, 12) || '未注明的匮乏维度',
+  };
+}
+
+function sanitizeMetrics(raw) {
+  const source = raw && typeof raw === 'object' ? raw : {};
+  const clamp = (value) => {
+    const num = Number(value);
+    if (!Number.isFinite(num)) return 0;
+    return Math.min(100, Math.max(0, Math.round(num)));
+  };
+
+  return {
+    conflict: clamp(source.conflict),
+    salvation: clamp(source.salvation),
+    control: clamp(source.control),
+    resonance: clamp(source.resonance),
+    painLink: clamp(source.painLink),
+  };
+}
+
+// POST /api/deep-match -> text/event-stream（SSE 透传）
+async function handleDeepMatch(request, env) {
+  const body = await readJsonBody(request);
+
+  const ip =
+    request.headers.get('cf-connecting-ip') ||
+    (request.headers.get('x-forwarded-for') || '').split(',')[0].trim() ||
+    'unknown';
+
+  if (await hitRateLimit(env, ip)) {
+    throw new HttpError(429, 'RATE_LIMITED', '命运推演得太快了，一分钟最多三次，稍后再试');
+  }
+
+  const ocA = sanitizeOcInput(body.ocA);
+  const ocB = sanitizeOcInput(body.ocB);
+  if (!ocA.name || !ocB.name) {
+    throw new HttpError(400, 'INVALID_PAYLOAD', '缺少角色信息');
+  }
+
+  const metrics = sanitizeMetrics(body.metrics);
+
+  const upstream = await streamDeepSeek(env, {
+    system: DEEP_MATCH_SYSTEM_PROMPT,
+    user: buildDeepMatchUserPrompt({ ocA, ocB, metrics }),
+    model: MODEL_CHAT,
+    temperature: 0.85,
+    maxTokens: 1200,
+  });
+
+  return new Response(upstream.body, {
+    status: 200,
+    headers: {
+      ...CORS_HEADERS,
+      'Content-Type': 'text/event-stream; charset=utf-8',
+      'Cache-Control': 'no-store',
+      'X-Accel-Buffering': 'no',
+    },
+  });
+}
+
 /* ================= 路由 ================= */
 
 function compilePath(pattern) {
@@ -1099,6 +1278,7 @@ const ROUTES = [
   { method: 'POST', path: '/api/my-ocs', handler: handleMyOcs },
   { method: 'POST', path: '/api/oc-import', handler: handleImportOc },
   { method: 'POST', path: '/api/oc-delete', handler: handleDeleteOc },
+  { method: 'POST', path: '/api/deep-match', handler: handleDeepMatch },
   { method: 'POST', path: '/api/feedback', handler: handleFeedback },
   { method: 'POST', path: '/api/use-coupon', handler: handleUseCoupon },
 ].map((route) => ({ ...route, ...compilePath(route.path) }));
@@ -1151,7 +1331,7 @@ export default {
     try {
       const { route, params } = resolveRoute(request.method, url.pathname);
       const data = await route.handler(request, env, { params, ctx, url });
-      response = ok(data);
+      response = data instanceof Response ? data : ok(data);
     } catch (error) {
       const known = typeof error?.code === 'string';
       if (!known || (Number.isInteger(error.status) && error.status >= 500)) {
